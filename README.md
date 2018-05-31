@@ -29,23 +29,27 @@ Not everyone has vCenter, vSphere, expensive APIs...  These cost $$$.  ESXi is f
 How to install
 --------------
 Download and install Terraform on your local system using instructions from https://www.terraform.io/downloads.html.
-Download this plugin from github
+Download this plugin from github and place a copy of it in SOMEDIR.
 
-How to use and configure a Vagrantfile
---------------------------------------
+How to use and configure a main.tf file
+---------------------------------------
 
 1. cd SOMEDIR
-1. `terraform init`
-1. `vi main.tf`  # Replace the contents of main.tf with the following example. Specify parameters to access your ESXi host, guest and local preferences.
+2. `vi main.tf`  # Replace the contents of main.tf with the following example. Specify parameters to access your ESXi host, guest and local preferences.
 
 ```
-resource "esxi_guest" "my-server" {
-  esxi_hostname = "esxi"
-  esxi_password = "MyPassword"
+provider "esxi" {
+  esxi_hostname  = "esxi"
+  esxi_hostport  = "22"
+  esxi_username  = "root"
+  esxi_password  = "MyPassword"
+}
+resource "esxi_guest" "vmtest" {
   guest_name = "v-test"
   esxi_disk_store = "MyDiskStore"
-  esxi_resource_pool = "/"
+  esxi_resource_pool = "Terraform"
 
+  # Use clone_from_vm or ovf_source as a source.
   clone_from_vm = "Templates/centos7"
   #ovf_source = "/u1/devel/terraform/centos-7-min/centos-7.vmx"
 }
@@ -53,14 +57,15 @@ resource "esxi_guest" "my-server" {
 
 Basic usage
 -----------
-1. `terraform plan`
-2. `terraform apply`
-3. `terraform show`
-4. `terraform destroy`
+3. `terraform init`
+4. `terraform plan`
+5. `terraform apply`
+6. `terraform show`
+7. `terraform destroy`
 
 Known issues with vmware_esxi
 -----------------------------
-* Limited Features
+* Limited Features 
 * Passwords are stored in clear-text in main.tf.
 * Sources (ovf_source) must have no networks configured.
 * Guests are not powered on
