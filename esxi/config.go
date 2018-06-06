@@ -15,6 +15,6 @@ type Config struct {
 	Esxi_password string
 }
 
-//func (c *Config) validateEsxiCreds() error {
-//  return nil
-//}
+func (c *Config) validateEsxiCreds() error {
+  return nil
+}

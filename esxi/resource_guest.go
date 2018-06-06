@@ -111,6 +111,13 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
   // Validations
   var src_path string
 
+  if esxi_resource_pool == "ha-root-pool" {
+    esxi_resource_pool = "/"
+  }
+  if string(esxi_resource_pool[0]) != "/" {
+    esxi_resource_pool = "/" + esxi_resource_pool
+  }
+
   if clone_from_vm != "" {
     src_path = fmt.Sprintf("vi://%s:%s@%s/%s", c.Esxi_username, c.Esxi_password, c.Esxi_hostname, clone_from_vm)
     fmt.Println("[Terraform-provider-esxi]   ")
@@ -121,10 +128,8 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
     return errors.New("Error: You must specify clone_from_vm or src_path as a source.")
   }
 
-  vmid, err := GuestCreate(c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password,
-     guest_name, esxi_disk_store, src_path, esxi_resource_pool)
-  if err == 0 {
-    //d.SetId(strconv.Itoa(vm_id))
+  vmid, err := GuestCreate(c, guest_name, esxi_disk_store, src_path, esxi_resource_pool)
+  if err == nil {
     d.SetId(vmid)
   } else {
     fmt.Println("Error: Unable to create guest.")
@@ -134,6 +139,15 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
+  c := m.(*Config)
+
+  guest_name, esxi_disk_store, esxi_resource_pool, err := GuestRead(c, d.Id())
+  if err != nil {
+    d.SetId("")
+  }
+  d.Set("esxi_disk_store",esxi_disk_store)
+  d.Set("esxi_resource_pool",esxi_resource_pool)
+  d.Set("guest_name",guest_name)
   return nil
 }
 
@@ -144,8 +158,8 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
   c := m.(*Config)
 
-  err := GuestDelete(c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password, d.Id())
-  if err == 0 {
+  err := GuestDelete(c, d.Id())
+  if err == nil {
     d.SetId("")
   }
   return nil

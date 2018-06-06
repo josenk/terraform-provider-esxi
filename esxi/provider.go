@@ -46,6 +46,7 @@ func Provider() terraform.ResourceProvider {
     },
     ResourcesMap: map[string]*schema.Resource{
       "esxi_guest": resourceGUEST(),
+      "esxi_resource_pool": resourceRESOURCEPOOL(),
     },
     ConfigureFunc: configureProvider,
   }
@@ -59,9 +60,9 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		Esxi_password: d.Get("esxi_password").(string),
 	}
 
-	//if err := config.validateEsxiCreds(); err != nil {
-	//	return nil, err
-	//}
+	if err := config.validateEsxiCreds(); err != nil {
+		return nil, err
+	}
 
 	return &config, nil
 }

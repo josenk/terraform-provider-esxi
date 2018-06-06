@@ -7,7 +7,6 @@ import (
 )
 
 // Connect to esxi host using ssh
-//func connectToHost(user string, pass string, host string) (*ssh.Client, *ssh.Session, error) {
 func connectToHost(esxiSSHinfo SshConnectionInfo) (*ssh.Client, *ssh.Session, error) {
 
 	sshConfig := &ssh.ClientConfig{
@@ -36,20 +35,18 @@ func connectToHost(esxiSSHinfo SshConnectionInfo) (*ssh.Client, *ssh.Session, er
 //  Run any remote ssh command on esxi server and return results.
 func runRemoteSshCommand(esxiSSHinfo SshConnectionInfo, remoteSshCommand string, shortCmdDesc string) (string, error){
 
+  log.Println("[provider-esxi / runRemoteSshCommand] Begin remoteSshCommand:" + shortCmdDesc )
 	client, session, err := connectToHost(esxiSSHinfo)
 	if err != nil {
-		log.Println("[provider-esxi] Failed to ssh to esxi host: " + err.Error())
+		log.Println("[provider-esxi / runRemoteSshCommand] Failed to ssh to esxi host: " + err.Error())
 		return "Failed to ssh to esxi host", err
   }
 
+  log.Println("[provider-esxi / runRemoteSshCommand] remoteSshCommand: |" + remoteSshCommand + "|")
 	stdout_raw, err := session.CombinedOutput(remoteSshCommand)
 	stdout := string(stdout_raw)
-	if err != nil {
-		errorMessage := fmt.Sprintf("[provider-esxi] There was an ERROR to %s: %s",shortCmdDesc, err.Error())
-		log.Println(errorMessage)
-		return errorMessage, err
-	}
+	log.Printf("[provider-esxi / runRemoteSshCommand] cmd stdout|%s| err:|%s|", stdout, err)
 
 	client.Close()
-	return stdout, nil
+	return stdout, err
 }
