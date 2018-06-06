@@ -3,6 +3,12 @@ Terraform-provider-esxi plugin
 This is a Terraform plugin that adds a VMware ESXi provider support.  This allows Terraform to control and provision VMs directly on an ESXi hypervisor without a need for vCenter or VShpere.   ESXi hypervisor is a free download from VMware!
 >https://www.vmware.com/go/get-free-esxi
 
+What's New:
+-----------
+* Resource pools should be fully functional.  Terraform will Add, Delete, Update & Read Resource Pools.
+* Guest vms framework is there.  Terraform will Add, Delete & Read the Guest vms.   More functionality to come.
+
+
 Documentation:
 -------------
 * This is an early development release!!!   There is only some basic functionality and very little validation.   Error messages are limited.  I'll add features and update documentation as time permits...
@@ -39,19 +45,31 @@ How to use and configure a main.tf file
 
 ```
 provider "esxi" {
-  esxi_hostname  = "esxi"
-  esxi_hostport  = "22"
-  esxi_username  = "root"
-  esxi_password  = "MyPassword"
+  esxi_hostname      = "esxi"
+  esxi_hostport      = "22"
+  esxi_username      = "root"
+  esxi_password      = "MyPassword"
+}
+resource "esxi_resource_pool" "MyPool" {
+  resource_pool_name = "MyPool"
+  cpu_min            = "100"
+  cpu_min_expandable = "true"
+  cpu_max            = "8000"
+  cpu_shares         = "normal"
+  mem_min            = "200"
+  mem_min_expandable = "true"
+  mem_max            = "8000"
+  mem_shares         = "normal"
 }
 resource "esxi_guest" "vmtest" {
-  guest_name = "v-test"
-  esxi_disk_store = "MyDiskStore"
+  depends_on         = ["esxi_resource_pool.MyPool"]
+  guest_name         = "v-test"
+  esxi_disk_store    = "MyDiskStore"
   esxi_resource_pool = "Terraform"
 
   # Use clone_from_vm or ovf_source as a source.
-  clone_from_vm = "Templates/centos7"
-  #ovf_source = "/u1/devel/terraform/centos-7-min/centos-7.vmx"
+  clone_from_vm      = "Templates/centos7"
+  #ovf_source        = "/u1/devel/terraform/centos-7-min/centos-7.vmx"
 }
 ```
 
@@ -65,11 +83,12 @@ Basic usage
 
 Known issues with vmware_esxi
 -----------------------------
-* Limited Features 
+* Limited Features
 * Passwords are stored in clear-text in main.tf.
 * Sources (ovf_source) must have no networks configured.
 * Guests are not powered on
 
 Version History
 ---------------
+0.0.2 Add support for Resource Pools
 0.0.1 Init release
