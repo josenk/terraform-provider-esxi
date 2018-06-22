@@ -11,22 +11,21 @@ import (
 
 
 func resourcePoolREAD(c *Config, pool_id string) (int, bool, int, string, int, bool, int, string, string, error) {
-  log.Println("[provider-esxi / resourcePoolREAD] Begin" )
   esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  log.Println("[provider-esxi / resourcePoolREAD] Begin" )
   var cpu_shares, mem_shares string
-  var cpu_min, cpu_max, mem_min, mem_max int
+  var cpu_min, cpu_max, mem_min, mem_max, tmpvar int
   var cpu_min_expandable, mem_min_expandable bool
 
-  short_desc := "resource pool_config_get"
   remote_cmd := fmt.Sprintf("vim-cmd hostsvc/rsrc/pool_config_get %s", pool_id)
-  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, short_desc)
+  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "resource pool_config_get")
 
   if strings.Contains(stdout, "deleted") == true {
     log.Printf("[provider-esxi] Already deleted: %s", err)
     return 0, false, 0, "", 0, false, 0, "", "", err
   }
   if err != nil {
-    log.Printf("[provider-esxi] Failed to get %s: %s", short_desc, err)
+    log.Printf("[provider-esxi] Failed to get %s: %s", "resource pool_config_get", err)
     return 0, false, 0, "", 0, false, 0, "", "", err
   }
 
@@ -55,11 +54,15 @@ func resourcePoolREAD(c *Config, pool_id string) (int, bool, int, string, int, b
       }
 
     case strings.Contains(scanner.Text(),"limit = "):
-      r,_ := regexp.Compile("[0-9]+")
+      r,_ := regexp.Compile("-?[0-9]+")
+			tmpvar,_ = strconv.Atoi(r.FindString(scanner.Text()))
+			if tmpvar < 0 {
+				tmpvar = 0
+			}
       if is_cpu_flag == true {
-        cpu_max,_ = strconv.Atoi(r.FindString(scanner.Text()))
+        cpu_max = tmpvar
       } else {
-        mem_max,_ = strconv.Atoi(r.FindString(scanner.Text()))
+        mem_max = tmpvar
       }
 
     case strings.Contains(scanner.Text(),"shares = "):

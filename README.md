@@ -41,7 +41,7 @@ How to use and configure a main.tf file
 ---------------------------------------
 
 1. cd SOMEDIR
-2. `vi main.tf`  # Replace the contents of main.tf with the following example. Specify parameters to access your ESXi host, guest and local preferences.
+2. `vi main.tf`  # Use the contents of this example main.tf as a template. Specify provider parameters to access your ESXi host.  Modify the resources for resource pools and guest vm.
 
 ```
 provider "esxi" {
@@ -53,23 +53,18 @@ provider "esxi" {
 resource "esxi_resource_pool" "MyPool" {
   resource_pool_name = "MyPool"
   cpu_min            = "100"
-  cpu_min_expandable = "true"
-  cpu_max            = "8000"
-  cpu_shares         = "normal"
   mem_min            = "200"
-  mem_min_expandable = "true"
-  mem_max            = "8000"
-  mem_shares         = "normal"
 }
 resource "esxi_guest" "vmtest" {
-  depends_on         = ["esxi_resource_pool.MyPool"]
+  depends_on         = ["esxi_resource_pool_name.MyPool"]
   guest_name         = "v-test"
-  esxi_disk_store    = "MyDiskStore"
-  esxi_resource_pool = "Terraform"
 
   # Use clone_from_vm or ovf_source as a source.
   clone_from_vm      = "Templates/centos7"
   #ovf_source        = "/u1/devel/terraform/centos-7-min/centos-7.vmx"
+
+  disk_store         = "MyDiskStore"
+  resource_pool_name = "MyPool"
 }
 ```
 
@@ -81,14 +76,42 @@ Basic usage
 6. `terraform show`
 7. `terraform destroy`
 
+Configuration reference
+-----------------------
+* provider "esxi"
+ * esxi_hostname
+ * esxi_hostport
+ * esxi_username
+ * esxi_password
+* resource "esxi_resource_pool"
+  * resource_pool_name
+  * cpu_min           
+  * cpu_min_expandable
+  * cpu_max           
+  * cpu_shares        
+  * mem_min           
+  * mem_min_expandable
+  * mem_max           
+  * mem_shares        
+* resource "esxi_guest"
+  * clone_from_vm     
+  * ovf_source        
+  * disk_store   
+  * resource_pool_name
+  * guest_name        
+  * memsize     
+  * numvcpus    
+
 Known issues with vmware_esxi
 -----------------------------
 * Limited Features
 * Passwords are stored in clear-text in main.tf.
 * Sources (ovf_source) must have no networks configured.
-* Guests are not powered on
+
 
 Version History
 ---------------
+0.0.3 Add support for setting memory and numvcpus for guest,
+      Add support to update some guests params.
 0.0.2 Add support for Resource Pools
 0.0.1 Init release

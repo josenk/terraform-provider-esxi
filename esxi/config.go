@@ -3,9 +3,6 @@ package esxi
 import (
 	//"fmt"
 	//"log"
-
-	//"github.com/hashicorp/terraform/helper/pathorcontents"
-	//"github.com/hashicorp/terraform/terraform"
 )
 
 type Config struct {
