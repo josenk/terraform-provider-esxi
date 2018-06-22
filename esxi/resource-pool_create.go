@@ -12,9 +12,9 @@ func resourcePoolCREATE(c *Config, resource_pool_name string, cpu_min int,
   cpu_min_expandable bool, cpu_max int, cpu_shares string, mem_min int,
   mem_min_expandable bool, mem_max int, mem_shares string, parent_pool string) (string, error) {
 
-  log.Println("[provider-esxi / resourcePoolCREATE] Begin" )
-  var pool_id, remote_cmd string
   esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+	log.Println("[provider-esxi / resourcePoolCREATE]" )
+	var pool_id, remote_cmd string
 
   cpu_min_opt := ""
   if cpu_min > 0 {
@@ -86,45 +86,4 @@ func resourcePoolCREATE(c *Config, resource_pool_name string, cpu_min int,
   stdout = r.Replace(stdout)
   stdout = strings.TrimSpace(stdout)
   return stdout, err
-}
-
-
-//  Check if Pool exists (by name )and return it's Pool ID.
-func getPoolID(c *Config, resource_pool_name string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-
-  log.Printf("[provider-esxi / getPoolID] Check if pool id already exists...")
-	resource_pool_name = strings.TrimSpace(resource_pool_name)
-
-  r := strings.NewReplacer("objID>","", "</objID","")
-  remote_cmd := fmt.Sprintf("grep -A1 '<name>%s</name>' /etc/vmware/hostd/pools.xml | grep -o objID.*objID", resource_pool_name)
-  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get existing resource pool id")
-  if err == nil {
-    stdout = r.Replace(stdout)
-    stdout = strings.TrimSpace(stdout)
-    return stdout, err
-  } else {
-    log.Printf("[provider-esxi / getPoolID] Failed get existing resource pool id: %s", stdout)
-    return "", err
-  }
-}
-
-//  Check if Pool exists (by id)and return it's Pool name.
-func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-
-  log.Printf("[provider-esxi / getPoolNAME] Check if pool name already exists...")
-	resource_pool_id = strings.TrimSpace(resource_pool_id)
-
-  r := strings.NewReplacer("name>","", "</name","")
-  remote_cmd := fmt.Sprintf("grep -B1 '<objID>%s</objID>' /etc/vmware/hostd/pools.xml | grep -o name.*name", resource_pool_id)
-  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get existing resource pool name")
-  if err == nil {
-    stdout = r.Replace(stdout)
-    stdout = strings.TrimSpace(stdout)
-    return stdout, err
-  } else {
-    log.Printf("[provider-esxi / getPoolNAME] Failed get existing resource pool name: %s", stdout)
-    return "", err
-  }
 }

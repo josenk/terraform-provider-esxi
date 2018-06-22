@@ -4,7 +4,6 @@ import (
     "fmt"
     "log"
     "os"
-
     "github.com/hashicorp/terraform/helper/schema"
     "github.com/hashicorp/terraform/terraform"
 )
