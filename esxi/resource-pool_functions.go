@@ -10,7 +10,7 @@ import (
 
 //  Check if Pool exists (by name )and return it's Pool ID.
 func getPoolID(c *Config, resource_pool_name string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / getPoolID]")
 
 	resource_pool_name = strings.TrimSpace(resource_pool_name)
@@ -32,7 +32,7 @@ func getPoolID(c *Config, resource_pool_name string) (string, error) {
 
 //  Check if Pool exists (by id)and return it's Pool name.
 func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / getPoolNAME]")
 	
 	resource_pool_id = strings.TrimSpace(resource_pool_id)

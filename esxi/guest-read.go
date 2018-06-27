@@ -3,18 +3,21 @@ package esxi
 import (
 	"fmt"
 	"strings"
+	"strconv"
 	"bufio"
 	"regexp"
 	"log"
 )
 
 
-func guestREAD(c *Config, vmid string) (string, string, string, string, string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+func guestREAD(c *Config, vmid string) (string, string, string, string, string, [4][3]string, error) {
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
 
   var guest_name, disk_store, resource_pool_name string
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents string
 	var memsize, numvcpus string
+	var virtual_networks [4][3]string
+
 	r,_ := regexp.Compile("")
 
   remote_cmd := fmt.Sprintf("vim-cmd  vmsvc/get.summary %s", vmid)
@@ -67,24 +70,57 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
   remote_cmd = fmt.Sprintf("cat %s", dst_vmx_file)
 	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
 
+  // Used to keep track if a network interface is using static or generated macs.
+  var isGeneratedMAC [3]bool
 
+	//  Read vmx_contents line-by-line to get current settings.
 	scanner = bufio.NewScanner(strings.NewReader(vmx_contents))
   for scanner.Scan() {
+
     switch {
     case strings.Contains(scanner.Text(),"memSize = "):
       r,_ = regexp.Compile(`\".*\"`)
       memsize = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
 			memsize = nr.Replace(memsize)
+			log.Printf("[provider-esxi] memsize found: %s", memsize)
+
     case strings.Contains(scanner.Text(),"numvcpus = "):
       r,_ = regexp.Compile(`\".*\"`)
       numvcpus = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
 			numvcpus = nr.Replace(numvcpus)
+			log.Printf("[provider-esxi] numvcpus found: %s", numvcpus)
 
+		case strings.Contains(scanner.Text(),"ethernet"):
+			re := regexp.MustCompile("ethernet(.).(.*) = \"(.*)\"")
+			results := re.FindStringSubmatch(scanner.Text())
+			index,_ := strconv.Atoi(results[1])
+
+			switch results[2] {
+		  case "networkName":
+				virtual_networks[index][0] = results[3]
+				log.Printf("[provider-esxi] %s : %s", results[0], results[3])
+
+			case "addressType":
+				if results[3] == "generated" {
+					isGeneratedMAC[index] = true
+				}
+
+			case "address":
+				if isGeneratedMAC[index] == false {
+					virtual_networks[index][1] = results[3]
+					log.Printf("[provider-esxi] %s : %s", results[0], results[3])
+				}
+
+			case "virtualDev":
+					virtual_networks[index][2] = results[3]
+					log.Printf("[provider-esxi] %s : %s", results[0], results[3])
+			}
     }
   }
 
 
-  return guest_name, disk_store, resource_pool_name, memsize, numvcpus, err
+  // return results
+  return guest_name, disk_store, resource_pool_name, memsize, numvcpus, virtual_networks, err
 }

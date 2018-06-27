@@ -3,14 +3,15 @@ package esxi
 import (
 	"fmt"
 	"strings"
+	"strconv"
 	"log"
   "regexp"
+	"bufio"
+	"time"
 )
 
-
-
 func getDst_vmx_file(c *Config, vmid string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / getDst_vmx_file]")
 
   //      -Get location of vmx file on esxi host
@@ -30,7 +31,7 @@ func getDst_vmx_file(c *Config, vmid string) (string, error) {
 }
 
 func readVmx_contents(c *Config, vmid string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / getVmx_contents]")
 
   var remote_cmd, vmx_contents string
@@ -43,9 +44,11 @@ func readVmx_contents(c *Config, vmid string) (string, error) {
 }
 
 
-func updateVmx_contents(c *Config, vmid string, memsize string, numvcpus string) error {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize string, numvcpus string,
+	virtual_networks [4][3]string) error {
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / updateVmx_contents]")
+
   var regexReplacement, remote_cmd string
 
   vmx_contents, err := readVmx_contents(c, vmid)
@@ -68,6 +71,92 @@ func updateVmx_contents(c *Config, vmid string, memsize string, numvcpus string)
 		vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
 	}
 
+  //
+	//  Create/update networks network_interfaces
+	//
+	var tmpvar string
+	var vmx_contents_new string
+
+	if iscreate == true {
+
+		//  This is create network interfaces
+	  scanner := bufio.NewScanner(strings.NewReader(vmx_contents))
+    for scanner.Scan() {
+
+	  	if  scanner.Text() == "" || strings.Contains(scanner.Text(),"ethernet") == true {
+	  		// Do nothing
+				log.Printf("%s: skipped", scanner.Text())
+			} else {
+	  		vmx_contents_new = vmx_contents_new + scanner.Text() + "\n"
+	  	}
+	  }
+
+    //  Add virtual networks.
+		var defaultNetworkType, networkType string
+		if virtual_networks[0][2] != "" {
+		  defaultNetworkType = virtual_networks[0][2]
+		} else {
+			defaultNetworkType = "e1000"
+		}
+		networkType = ""
+
+	  for i := 0; i < 4; i++ {
+	  	log.Printf("[provider-esxi] i: %s", i)
+
+	  	if virtual_networks[i][0] != "" {
+
+				//  Set virtual_network name
+	  		log.Printf("[provider-esxi] virtual_networks[i][0]: %s", virtual_networks[i][0])
+	  		tmpvar = fmt.Sprintf("ethernet%d.networkName = \"%s\"\n", i, virtual_networks[i][0])
+	  		vmx_contents_new = vmx_contents_new + tmpvar
+
+        //  Set mac address
+        if virtual_networks[i][1] != "" {
+				  tmpvar = fmt.Sprintf("ethernet%d.addressType = \"static\"\n", i)
+				  vmx_contents_new = vmx_contents_new + tmpvar
+
+				  tmpvar = fmt.Sprintf("ethernet%d.address = \"%s\"\n", i, virtual_networks[i][1])
+	  		  vmx_contents_new = vmx_contents_new + tmpvar
+				}
+
+        //  Set network type
+				if virtual_networks[i][2] == "" {
+					networkType = defaultNetworkType
+				} else {
+					networkType = virtual_networks[i][2]
+				}
+
+				tmpvar = fmt.Sprintf("ethernet%d.virtualDev = \"%s\"\n", i, networkType)
+				vmx_contents_new = vmx_contents_new + tmpvar
+
+	  		tmpvar = fmt.Sprintf("ethernet%d.present = \"TRUE\"\n", i)
+
+	  		vmx_contents_new = vmx_contents_new + tmpvar
+	  	}
+
+	  }
+		vmx_contents = vmx_contents_new
+
+	} else {
+
+		//  This is modify network interfaces
+		for i := 0; i < 4; i++ {
+
+			// Fix virtual_network
+			if virtual_networks[i][0] != "" {
+				re := regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".networkName = \".*\"")
+				regexReplacement = fmt.Sprintf("ethernet" + strconv.Itoa(i) + ".networkName = \"%s\"", virtual_networks[i][0])
+				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+			}
+
+      //  Fix device type
+			if virtual_networks[i][0] != "" && virtual_networks[i][2] != "" {
+				re := regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".virtualDev = \".*\"")
+				regexReplacement = fmt.Sprintf("ethernet" + strconv.Itoa(i) + ".virtualDev = \"%s\"", virtual_networks[i][2])
+				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+			}
+		}
+	}
 
 
 	//
@@ -85,38 +174,51 @@ func updateVmx_contents(c *Config, vmid string, memsize string, numvcpus string)
   return err
 }
 
-//func guestPowerGetState(c *Config, vmid string) (string, error) {
-//  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-//  log.Printf("[provider-esxi / guestPowerGetState]")
-//
-//  remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.getstate %s",vmid)
-//  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.on")
-//  return stdout,err
-//}
 
 func guestPowerOn(c *Config, vmid string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / guestPowerOn]")
 
   remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.on %s",vmid)
   stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.on")
+	time.Sleep(3 * time.Second)
+
+	stdout, _ = guestPowerGetState(c, vmid)
+	if strings.Contains(stdout, "Powered on") == true {
+		return stdout,nil
+	}
+
   return stdout,err
 }
 
 func guestPowerOff(c *Config, vmid string) (string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / guestPowerOff]")
 
-  remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.off %s",vmid)
-  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.off")
-  return stdout,err
+	remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.shutdown %s",vmid)
+	stdout, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.shutdown")
+
+	for i := 0; i < 10; i++ {
+		stdout, _ := guestPowerGetState(c, vmid)
+		if strings.Contains(stdout, "Powered off") == true {
+			return stdout,nil
+		}
+		time.Sleep(3 * time.Second)
+	}
+
+  remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/power.off %s",vmid)
+  stdout, _   = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.off")
+	time.Sleep(1 * time.Second)
+
+  return stdout,nil
 }
 
-//func guestShutdown(c *Config, vmid string) (string, error) {
-//  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-//  log.Printf("[provider-esxi / guestShutdown]")
-//
-//  remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.off %s",vmid)
-//  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.shutdown")
-//  return stdout, err
-//}
+
+func guestPowerGetState(c *Config, vmid string) (string, error) {
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  log.Printf("[provider-esxi / guestPowerGetState]")
+
+  remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.getstate %s",vmid)
+  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.getstate")
+  return stdout,err
+}

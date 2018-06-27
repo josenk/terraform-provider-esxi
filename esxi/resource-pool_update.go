@@ -12,7 +12,7 @@ func resourcePoolUPDATE(c *Config, pool_id string, cpu_min int,
   cpu_min_expandable bool, cpu_max int, cpu_shares string, mem_min int,
   mem_min_expandable bool, mem_max int, mem_shares string) (string, error) {
 
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
 	log.Println("[provider-esxi / resourcePoolUPDATE] Begin" )
   var remote_cmd string
 	
