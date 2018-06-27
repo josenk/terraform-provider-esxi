@@ -10,9 +10,10 @@ import (
 
 
 func guestCREATE(c *Config, guest_name string, disk_store string,
-	 src_path string, resource_pool_name string, memsize string, numvcpus string) (string, error) {
+	 src_path string, resource_pool_name string, memsize string, numvcpus string,
+	 virtual_networks [4][3]string ) (string, error) {
 
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / guestCREATE]")
 
   var remote_cmd, vmid, stdout string
@@ -49,7 +50,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	//  make updates to vmx file
 	//
-  err = updateVmx_contents(c, vmid, memsize, numvcpus)
+  err = updateVmx_contents(c, vmid, true, memsize, numvcpus, virtual_networks)
 	if err != nil {
 		return "Failed to update vmx file on esxi host, see esxi console/logs for more details.", err
 	}

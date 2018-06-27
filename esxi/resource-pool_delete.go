@@ -7,7 +7,7 @@ import (
 
 
 func resourcePoolDELETE(c *Config, pool_id string) error {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Println("[provider-esxi / resourcePoolDELETE] Begin" )
 
 

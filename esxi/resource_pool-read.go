@@ -11,7 +11,7 @@ import (
 
 
 func resourcePoolREAD(c *Config, pool_id string) (int, bool, int, string, int, bool, int, string, string, error) {
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Println("[provider-esxi / resourcePoolREAD] Begin" )
   var cpu_shares, mem_shares string
   var cpu_min, cpu_max, mem_min, mem_max, tmpvar int

@@ -95,8 +95,6 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
   mem_max            := d.Get("mem_max").(int)
   mem_shares         := strings.ToLower(d.Get("mem_shares").(string))
 
-
-
   if resource_pool_name == string('/') {
     return fmt.Errorf("Missing required resource_pool_name")
   }

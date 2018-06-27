@@ -1,14 +1,12 @@
 package esxi
 
 import (
-//	"fmt"
 	"log"
-//  "strconv"
-//  "strings"
 )
 
 
-func guestUPDATE(c *Config, vmid string, memsize string, numvcpus string) error {
+func guestUPDATE(c *Config, vmid string, memsize string, numvcpus string,
+	virtual_networks [4][3]string) error {
   log.Printf("[provider-esxi / guestUPDATE]")
 
   _, err := guestPowerOff(c, vmid)
@@ -19,7 +17,7 @@ func guestUPDATE(c *Config, vmid string, memsize string, numvcpus string) error 
   //
   //  make updates to vmx file
   //
-  err = updateVmx_contents(c, vmid, memsize, numvcpus)
+  err = updateVmx_contents(c, vmid, false, memsize, numvcpus, virtual_networks)
 
   _, err = guestPowerOn(c, vmid)
 	if err != nil {

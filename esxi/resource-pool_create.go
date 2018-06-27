@@ -12,7 +12,7 @@ func resourcePoolCREATE(c *Config, resource_pool_name string, cpu_min int,
   cpu_min_expandable bool, cpu_max int, cpu_shares string, mem_min int,
   mem_min_expandable bool, mem_max int, mem_shares string, parent_pool string) (string, error) {
 
-  esxiSSHinfo := SshConnectionInfo{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
+  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
 	log.Println("[provider-esxi / resourcePoolCREATE]" )
 	var pool_id, remote_cmd string
 

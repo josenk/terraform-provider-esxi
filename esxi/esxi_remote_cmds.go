@@ -7,7 +7,7 @@ import (
 )
 
 // Connect to esxi host using ssh
-func connectToHost(esxiSSHinfo SshConnectionInfo) (*ssh.Client, *ssh.Session, error) {
+func connectToHost(esxiSSHinfo SshConnectionStruct) (*ssh.Client, *ssh.Session, error) {
 
 	sshConfig := &ssh.ClientConfig{
 		User: esxiSSHinfo.user,
@@ -33,7 +33,7 @@ func connectToHost(esxiSSHinfo SshConnectionInfo) (*ssh.Client, *ssh.Session, er
 
 
 //  Run any remote ssh command on esxi server and return results.
-func runRemoteSshCommand(esxiSSHinfo SshConnectionInfo, remoteSshCommand string, shortCmdDesc string) (string, error){
+func runRemoteSshCommand(esxiSSHinfo SshConnectionStruct, remoteSshCommand string, shortCmdDesc string) (string, error){
 
   log.Println("[provider-esxi / runRemoteSshCommand] :" + shortCmdDesc )
 	client, session, err := connectToHost(esxiSSHinfo)
