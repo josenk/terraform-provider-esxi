@@ -10,12 +10,12 @@ import (
 )
 
 
-func guestREAD(c *Config, vmid string) (string, string, string, string, string, [4][3]string, error) {
+func guestREAD(c *Config, vmid string) (string, string, string, string, string, string, [4][3]string, error) {
   esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
 
   var guest_name, disk_store, resource_pool_name string
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents string
-	var memsize, numvcpus string
+	var memsize, numvcpus, virthwver string
 	var virtual_networks [4][3]string
 
 	r,_ := regexp.Compile("")
@@ -39,7 +39,7 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
     }
   }
 
-
+  //  Get resource pool that this VM is located
   remote_cmd = fmt.Sprintf(`grep -A2 'objID>%s</objID' /etc/vmware/hostd/pools.xml | grep -o resourcePool.*resourcePool`, vmid)
   stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if guest is in resource pool")
   nr := strings.NewReplacer("resourcePool>","", "</resourcePool","")
@@ -66,6 +66,7 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
 	dst_vmx_file = "/vmfs/volumes/" + dst_vmx_ds + "/" + dst_vmx
 
 	log.Printf("[provider-esxi] dst_vmx_file: %s", dst_vmx_file)
+	log.Printf("[provider-esxi] disk_store: %s  dst_vmx_ds:%s", disk_store, dst_vmx_file)
 
   remote_cmd = fmt.Sprintf("cat %s", dst_vmx_file)
 	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
@@ -91,6 +92,12 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
 			nr = strings.NewReplacer(`"`,"", `"`,"")
 			numvcpus = nr.Replace(numvcpus)
 			log.Printf("[provider-esxi] numvcpus found: %s", numvcpus)
+
+		case strings.Contains(scanner.Text(),"virtualHW.version = "):
+      r,_ = regexp.Compile(`\".*\"`)
+      virthwver = r.FindString(scanner.Text())
+			virthwver = strings.Replace(virthwver,`"`,"",-1)
+			log.Printf("[provider-esxi] virthwver found: %s", virthwver)
 
 		case strings.Contains(scanner.Text(),"ethernet"):
 			re := regexp.MustCompile("ethernet(.).(.*) = \"(.*)\"")
@@ -122,5 +129,5 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
 
 
   // return results
-  return guest_name, disk_store, resource_pool_name, memsize, numvcpus, virtual_networks, err
+  return guest_name, disk_store, resource_pool_name, memsize, numvcpus, virthwver, virtual_networks, err
 }
