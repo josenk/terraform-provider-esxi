@@ -16,6 +16,7 @@ func getDst_vmx_file(c *Config, vmid string) (string, error) {
 
   //      -Get location of vmx file on esxi host
   var dst_vmx_ds, dst_vmx, dst_vmx_file string
+
   remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/get.config %s | grep vmPathName|grep -oE \"\\[.*\\]\"",vmid)
 	stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get dst_vmx_ds")
 	dst_vmx_ds   = strings.TrimSpace(string(stdout))
@@ -45,7 +46,7 @@ func readVmx_contents(c *Config, vmid string) (string, error) {
 
 
 func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize string, numvcpus string,
-	virtual_networks [4][3]string) error {
+	virthwver string, virtual_networks [4][3]string) error {
   esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / updateVmx_contents]")
 
@@ -68,6 +69,13 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize string, n
 	if numvcpus != "" {
 		re := regexp.MustCompile("numvcpus = \".*\"")
 		regexReplacement = fmt.Sprintf("numvcpus = \"%s\"", numvcpus)
+		vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+	}
+
+	// modify virthwver
+	if virthwver != "" {
+		re := regexp.MustCompile("virtualHW.version = \".*\"")
+		regexReplacement = fmt.Sprintf("virtualHW.version = \"%s\"", virthwver)
 		vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
 	}
 
@@ -179,12 +187,15 @@ func guestPowerOn(c *Config, vmid string) (string, error) {
   esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / guestPowerOn]")
 
+	if guestPowerGetState(c, vmid) == "on" {
+		return "",nil
+	}
+
   remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.on %s",vmid)
   stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.on")
 	time.Sleep(3 * time.Second)
 
-	stdout, _ = guestPowerGetState(c, vmid)
-	if strings.Contains(stdout, "Powered on") == true {
+	if guestPowerGetState(c, vmid) == "on" {
 		return stdout,nil
 	}
 
@@ -195,30 +206,52 @@ func guestPowerOff(c *Config, vmid string) (string, error) {
   esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / guestPowerOff]")
 
-	remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.shutdown %s",vmid)
-	stdout, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.shutdown")
+  var remote_cmd, stdout string
 
-	for i := 0; i < 10; i++ {
-		stdout, _ := guestPowerGetState(c, vmid)
-		if strings.Contains(stdout, "Powered off") == true {
-			return stdout,nil
-		}
-		time.Sleep(3 * time.Second)
+  savedpowerstate := guestPowerGetState(c, vmid)
+	if savedpowerstate == "off" {
+		return "",nil
+
+	} else if savedpowerstate == "on" {
+	  remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/power.shutdown %s",vmid)
+	  stdout, _   = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.shutdown")
+	  time.Sleep(3 * time.Second)
+
+	  for i := 0; i < 10; i++ {
+	  	if guestPowerGetState(c, vmid) == "off" {
+	  		return stdout,nil
+	  	}
+	  	time.Sleep(3 * time.Second)
+	  }
+
+    remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/power.off %s",vmid)
+    stdout, _   = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.off")
+	  time.Sleep(1 * time.Second)
+
+    return stdout,nil
+
+	} else {
+		remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/power.off %s",vmid)
+    stdout, _   = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.off")
+		return stdout,nil
 	}
-
-  remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/power.off %s",vmid)
-  stdout, _   = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.off")
-	time.Sleep(1 * time.Second)
-
-  return stdout,nil
 }
 
 
-func guestPowerGetState(c *Config, vmid string) (string, error) {
+func guestPowerGetState(c *Config, vmid string) string {
   esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
   log.Printf("[provider-esxi / guestPowerGetState]")
 
   remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.getstate %s",vmid)
-  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.getstate")
-  return stdout,err
+  stdout, _   := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.getstate")
+
+	if strings.Contains(stdout, "Powered off") == true {
+		return "off"
+	} else if strings.Contains(stdout, "Powered on") == true {
+		return "on"
+	} else if strings.Contains(stdout, "Suspended") == true {
+		return "suspended"
+	} else {
+		return "Unknown"
+	}
 }

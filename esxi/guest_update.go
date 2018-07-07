@@ -5,24 +5,24 @@ import (
 )
 
 
-func guestUPDATE(c *Config, vmid string, memsize string, numvcpus string,
+func guestUPDATE(c *Config, vmid string, memsize string, numvcpus string, virthwver string,
 	virtual_networks [4][3]string) error {
   log.Printf("[provider-esxi / guestUPDATE]")
 
-  _, err := guestPowerOff(c, vmid)
-	if err != nil {
-		return err
+  var err error
+
+  savedpowerstate := guestPowerGetState(c, vmid)
+	  if savedpowerstate == "on" ||  savedpowerstate == "suspended" {
+    _, err = guestPowerOff(c, vmid)
+	  if err != nil {
+	  	return err
+	  }
 	}
 
   //
   //  make updates to vmx file
   //
-  err = updateVmx_contents(c, vmid, false, memsize, numvcpus, virtual_networks)
-
-  _, err = guestPowerOn(c, vmid)
-	if err != nil {
-		return err
-	}
+  err = updateVmx_contents(c, vmid, false, memsize, numvcpus, virthwver, virtual_networks)
 
   return err
 }
