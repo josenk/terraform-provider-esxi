@@ -4,6 +4,7 @@ import (
   "fmt"
   "errors"
   "github.com/hashicorp/terraform/helper/schema"
+  "github.com/hashicorp/terraform/helper/validation"
   "strconv"
   "log"
   "strings"
@@ -60,36 +61,36 @@ func resourceGUEST() *schema.Resource {
       "boot_disk_size": &schema.Schema{
           Type:     schema.TypeString,
           Optional: true,
-          ForceNew: false,
+          ForceNew: true,
           DefaultFunc: schema.EnvDefaultFunc("boot_disk_size", nil),
           Description: "Guest boot disk size. Will expand boot disk to this size.",
       },
-      //"guest_storage": &schema.Schema{
-      //    Type:     schema.TypeString,
-      //    Required: true,
-      //    DefaultFunc: schema.EnvDefaultFunc("guest_storage", nil),
-      //    Description: "Guest guest additional storage.",
-      //},
       "memsize": &schema.Schema{
-          Type:     schema.TypeString,
+          Type:     schema.TypeInt,
           Optional: true,
           ForceNew: false,
-          DefaultFunc: schema.EnvDefaultFunc("memsize", nil),
+          Computed: true,
+          DefaultFunc: schema.EnvDefaultFunc("memsize", 512),
           Description: "Guest guest memory size.",
+          ValidateFunc: validation.IntBetween(128, 6128000),
       },
       "numvcpus": &schema.Schema{
-          Type:     schema.TypeString,
+          Type:     schema.TypeInt,
           Optional: true,
           ForceNew: false,
-          DefaultFunc: schema.EnvDefaultFunc("numvcpus", nil),
+          Computed: true,
+          DefaultFunc: schema.EnvDefaultFunc("numvcpus", 1),
           Description: "Guest guest number of virtual cpus.",
+          ValidateFunc: validation.IntBetween(1, 128),
       },
       "virthwver": &schema.Schema{
-          Type:     schema.TypeString,
+          Type:     schema.TypeInt,
           Optional: true,
           ForceNew: false,
-          DefaultFunc: schema.EnvDefaultFunc("virthwver", nil),
+          Computed: true,
+          DefaultFunc: schema.EnvDefaultFunc("virthwver", 8),
           Description: "Guest Virtual HW version.",
+          ValidateFunc: validation.IntBetween(4, 14),
       },
       "network_interfaces": &schema.Schema{
 				Type:     schema.TypeList,
@@ -118,9 +119,50 @@ func resourceGUEST() *schema.Resource {
       "power": &schema.Schema{
           Type:     schema.TypeString,
           Optional: true,
-          ForceNew: false,
-          DefaultFunc: schema.EnvDefaultFunc("power", nil),
-          Description: "Guest powered on.",
+          Computed: true,
+          Description: "Guest power state.",
+          DefaultFunc: schema.EnvDefaultFunc("power", "on"),
+      },
+      //  Calculated only, you cannot overwrite this.
+      "ip_address": &schema.Schema{
+        Type:     schema.TypeString,
+        Computed: true,
+        Description: "The IP address reported by VMware tools.",
+      },
+      "guest_net_timeout": {
+        Type:        schema.TypeInt,
+        Optional:    true,
+        Default:     60,
+        Description: "The amount of guest uptime, in seconds, to wait for an available IP address on this virtual machine.",
+        ValidateFunc: validation.IntBetween(1, 600),
+      },
+      "guest_shutdown_timeout": {
+        Type:        schema.TypeInt,
+        Optional:    true,
+        Default:     20,
+        Description: "The amount of time, in seconds, to wait for a graceful shutdown before doing a forced power off.",
+        ValidateFunc: validation.IntBetween(0, 600),
+      },
+      "virtual_disks": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: false,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"virtual_disk_id": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"slot": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: false,
+              Computed: true,
+              Description: "SCSI_Ctrl:SCSI_id.    Range  '0:1' to '0:15'.   SCSI_id 7 is not allowed.",
+						},
+					},
+				},
       },
     },
   }
@@ -129,6 +171,8 @@ func resourceGUEST() *schema.Resource {
 func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
   c := m.(*Config)
   var virtual_networks [4][3]string
+  var virtual_disks    [60][2]string
+
 
   clone_from_vm      := d.Get("clone_from_vm").(string)
   ovf_source         := d.Get("ovf_source").(string)
@@ -137,15 +181,14 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
   guest_name         := d.Get("guest_name").(string)
   boot_disk_type     := d.Get("boot_disk_type").(string)
   boot_disk_size     := d.Get("boot_disk_size").(string)
-  //guest_storage      := d.Get("guest_storage").(string)
-  memsize            := d.Get("memsize").(string)
-  numvcpus           := d.Get("numvcpus").(string)
-  virthwver          := d.Get("virthwver").(string)
-  power              := d.Get("power").(string)
+  memsize            := d.Get("memsize").(int)
+  numvcpus           := d.Get("numvcpus").(int)
+  virthwver          := d.Get("virthwver").(int)
+  guest_net_timeout  := d.Get("guest_net_timeout").(int)
 
   // Validations
   var src_path string
-  var tmpint int
+  var tmpint, i int
 
   if resource_pool_name == "ha-root-pool" {
     resource_pool_name = "/"
@@ -160,37 +203,14 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
     src_path = "none"
   }
 
-  //  Validate memsize
-  if _, err := strconv.Atoi(memsize); err != nil && memsize != "" {
-    return errors.New("Error: memsize must be an integer")
-  }
-  tmpint,_ = strconv.Atoi(memsize)
-  if (tmpint < 128 || tmpint > 6128) && memsize != "" {
-    return errors.New("Error: memsize must be > 128 and < 6128000")
-  }
-
-  //  Validate number of virt cpus.
-  if _, err := strconv.Atoi(numvcpus); err != nil && numvcpus != "" {
-    return errors.New("Error: numvcpus must be an integer")
-  }
-  tmpint,_ = strconv.Atoi(numvcpus)
-  if (tmpint < 1 || tmpint >128) && numvcpus != "" {
-    return errors.New("Error: numvcpus must be an > 0 and < 128")
-  }
-
   //  Validate number of virthwver.
-  if _, err := strconv.Atoi(virthwver); err != nil && virthwver != "" {
-    return errors.New("Error: virthwver must be an integer")
+  switch virthwver {
+  case 0,4,7,8,9,10,11,12,13,14:
+    // virthwver check passes.
+  default:
+    return errors.New("Error: virthwver must be 4,7,8,9,10,11,12,13 or 14")
   }
-  if virthwver != "" {
-    tmpint,_ = strconv.Atoi(virthwver)
-    switch tmpint {
-    case 4,7,8,9,10,11,12,13,14:
-      // virthwver check passes.
-    default:
-      return errors.New("Error: virthwver must be 4,7,8,9,10,11,12,13 or 14")
-    }
-  }
+
 
   // Validate boot_disk_type
   if boot_disk_type == "" {
@@ -209,11 +229,12 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
     return errors.New("Error: boot_disk_size must be an > 1 and < 62000")
   }
 
-  adaptersCount := d.Get("network_interfaces.#").(int)
-  if adaptersCount > 3 {
-    adaptersCount = 3
+  //  Validate lan adapters
+  lanAdaptersCount := d.Get("network_interfaces.#").(int)
+  if lanAdaptersCount > 3 {
+    lanAdaptersCount = 3
   }
-  for i := 0; i < adaptersCount; i++ {
+  for i = 0; i < lanAdaptersCount; i++ {
     prefix := fmt.Sprintf("network_interfaces.%d.", i)
 
     if attr, ok := d.Get(prefix + "virtual_network").(string); ok && attr != "" {
@@ -238,9 +259,29 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
     }
   }
 
+  //  Validate virtual_disks
+  virtualDiskCount := d.Get("virtual_disks.#").(int)
+  if virtualDiskCount > 59 {
+    virtualDiskCount = 59
+  }
+  for i = 0; i < virtualDiskCount; i++ {
+    prefix := fmt.Sprintf("virtual_disks.%d.", i)
 
-  vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name,
-     memsize, numvcpus, virthwver, boot_disk_type, boot_disk_size, virtual_networks)
+    if attr, ok := d.Get(prefix + "virtual_disk_id").(string); ok && attr != "" {
+			virtual_disks[i][0] = d.Get(prefix + "virtual_disk_id").(string)
+    }
+
+    if attr, ok := d.Get(prefix + "slot").(string); ok && attr != "" {
+      virtual_disks[i][1] = d.Get(prefix + "slot").(string)
+      result := validateVirtualDiskSlot(virtual_disks[i][1])
+      if result != "ok" {
+        return errors.New(result)
+      }
+    }
+  }
+
+  vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
+     numvcpus, virthwver, boot_disk_type, boot_disk_size, virtual_networks, virtual_disks)
   if err != nil {
     tmpint,_ = strconv.Atoi(vmid)
     if tmpint > 0 {
@@ -252,16 +293,23 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
       return errors.New(vmid)
     }
   }
+
+  //  set vmid
   d.SetId(vmid)
 
-  // Do Power state
-  if power == "on" || power == "true" || power == "" {
-    _, err = guestPowerOn(c, vmid)
-    if err != nil {
-      fmt.Println("Failed to power on.")
-      return errors.New("Failed to power on.")
-    }
+  _, err = guestPowerOn(c, vmid)
+  if err != nil {
+    fmt.Println("Failed to power on.")
+    return errors.New("Failed to power on.")
   }
+  d.Set("power", "on")
+
+  //
+  // Get IP address (need vmware tools installed)
+  //
+  ip_address := guestGetIpAddress(c, d.Id(), guest_net_timeout)
+  log.Printf("guestREAD: guestGetIpAddress: %s\n", ip_address)
+  d.Set("ip_address", ip_address)
 
   return nil
 }
@@ -269,27 +317,31 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
   c := m.(*Config)
 
-  guest_name, disk_store, resource_pool_name, memsize, numvcpus, virthwver, virtual_networks, err := guestREAD(c, d.Id())
+  var power string
 
+  guest_name, disk_store, resource_pool_name, memsize, numvcpus, virthwver, virtual_networks, err := guestREAD(c, d.Id())
   if err != nil {
     d.SetId("")
+    return nil
   }
+
   d.Set("disk_store",disk_store)
   d.Set("resource_pool_name",resource_pool_name)
   d.Set("guest_name",guest_name)
-  if d.Get("memsize").(string) != "" {
+  if d.Get("memsize").(int) != 0 {
     d.Set("memsize",memsize)
   }
-  if d.Get("numvcpus").(string) != "" {
+  if d.Get("numvcpus").(int) != 0 {
     d.Set("numvcpus",numvcpus)
   }
-  if d.Get("virthwver").(string) != "" {
+  if d.Get("virthwver").(int) != 0 {
     d.Set("virthwver",virthwver)
   }
+  guest_net_timeout := d.Get("guest_net_timeout").(int)
 
 
   // Do network interfaces
-  log.Printf("virtual_networks: %q", virtual_networks)
+  log.Printf("virtual_networks: %q\n", virtual_networks)
   nics := make([]map[string]interface{}, 0, 1)
 
 	for nic := 0; nic < 3; nic++ {
@@ -316,9 +368,20 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 
   d.Set("network_interfaces", nics)
 
-  // Do power state
-  if d.Get("power").(string) != "" {
-    d.Set("power", guestPowerGetState(c, d.Id()))
+  //  Get power state
+  log.Println("guestREAD: guestPowerGetState")
+  power = guestPowerGetState(c, d.Id())
+  d.Set("power", power)
+
+  //
+  // Get IP address (need vmware tools installed)
+  //
+  if power == "on"  {
+    ip_address := guestGetIpAddress(c, d.Id(), guest_net_timeout)
+    log.Printf("guestREAD: guestGetIpAddress: %s\n", ip_address)
+    d.Set("ip_address", ip_address)
+  } else {
+    d.Set("ip_address", "")
   }
 
   return nil
@@ -327,17 +390,20 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
   c := m.(*Config)
   var virtual_networks [4][3]string
+  var virtual_disks    [60][2]string
+  var i int
 
-  memsize      := d.Get("memsize").(string)
-  numvcpus     := d.Get("numvcpus").(string)
-  virthwver    := d.Get("virthwver").(string)
-  power        := d.Get("power").(string)
+  memsize                := d.Get("memsize").(int)
+  numvcpus               := d.Get("numvcpus").(int)
+  virthwver              := d.Get("virthwver").(int)
+  guest_net_timeout      := d.Get("guest_net_timeout").(int)
+  guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 
-  adaptersCount := d.Get("network_interfaces.#").(int)
-  if adaptersCount > 3 {
-    adaptersCount = 3
+  lanAdaptersCount       := d.Get("network_interfaces.#").(int)
+  if lanAdaptersCount > 3 {
+    lanAdaptersCount = 3
   }
-  for i := 0; i < adaptersCount; i++ {
+  for i := 0; i < lanAdaptersCount; i++ {
     prefix := fmt.Sprintf("network_interfaces.%d.", i)
 
     if attr, ok := d.Get(prefix + "virtual_network").(string); ok && attr != "" {
@@ -349,27 +415,35 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
     if attr, ok := d.Get(prefix + "nic_type").(string); ok && attr != "" {
       virtual_networks[i][2] = d.Get(prefix + "nic_type").(string)
     }
-    fmt.Printf("virtual_network:%s", virtual_networks[i][0])
-    fmt.Printf("mac_address:%s", virtual_networks[i][1])
-    fmt.Printf("nic_type: %s", virtual_networks[i][2])
   }
 
-  err := guestUPDATE(c, d.Id(), memsize, numvcpus, virthwver, virtual_networks)
+  //  Validate virtual_disks
+  virtualDiskCount := d.Get("virtual_disks.#").(int)
+  if virtualDiskCount > 59 {
+    virtualDiskCount = 59
+  }
+  for i = 0; i < virtualDiskCount; i++ {
+    prefix := fmt.Sprintf("virtual_disks.%d.", i)
 
-  // Do power state
-  if power == "on" || power == "true" {
-    _, err = guestPowerOn(c, d.Id())
-    if err != nil {
-      fmt.Println("Failed to power on.")
-      return errors.New("Failed to power on.")
+    if attr, ok := d.Get(prefix + "virtual_disk_id").(string); ok && attr != "" {
+      virtual_disks[i][0] = d.Get(prefix + "virtual_disk_id").(string)
     }
-  } else if power == "off" || power == "false" {
-    _, err = guestPowerOff(c, d.Id())
-    if err != nil {
-      fmt.Println("Failed to power off.")
-      return errors.New("Failed to power off.")
+
+    if attr, ok := d.Get(prefix + "slot").(string); ok && attr != "" {
+      // todo validate slots are in format "0-3:0-15"
+      virtual_disks[i][1] = d.Get(prefix + "slot").(string)
     }
   }
+
+  err := guestUPDATE(c, d.Id(), memsize, numvcpus, virthwver, virtual_networks,
+    virtual_disks, guest_shutdown_timeout)
+
+  //
+  // Get IP address (need vmware tools installed)
+  //
+  ip_address := guestGetIpAddress(c, d.Id(), guest_net_timeout)
+  log.Printf("guestREAD: guestGetIpAddress: %s\n", ip_address)
+  d.Set("ip_address", ip_address)
 
   return err
 }
@@ -377,7 +451,9 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
   c := m.(*Config)
 
-  err := guestDELETE(c, d.Id())
+  guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
+
+  err := guestDELETE(c, d.Id(), guest_shutdown_timeout)
   if err != nil {
     return err
   }

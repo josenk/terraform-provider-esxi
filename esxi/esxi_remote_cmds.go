@@ -4,6 +4,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"fmt"
 	"log"
+	"strings"
 )
 
 // Connect to esxi host using ssh
@@ -42,10 +43,9 @@ func runRemoteSshCommand(esxiSSHinfo SshConnectionStruct, remoteSshCommand strin
 		return "Failed to ssh to esxi host", err
   }
 
-  log.Println("[provider-esxi / runRemoteSshCommand] remoteSshCommand: |" + remoteSshCommand + "|")
 	stdout_raw, err := session.CombinedOutput(remoteSshCommand)
-	stdout := string(stdout_raw)
-	log.Printf("[provider-esxi / runRemoteSshCommand] cmd stdout|%s| err:|%s|", stdout, err)
+	stdout := strings.TrimSpace(string(stdout_raw))
+	log.Printf("[provider-esxi / runRemoteSshCommand] cmd:/%s/\n stdout:/%s/\nstderr:/%s/\n", remoteSshCommand, stdout, err)
 
 	client.Close()
 	return stdout, err

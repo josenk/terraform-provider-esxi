@@ -14,7 +14,8 @@ func resourcePoolDELETE(c *Config, pool_id string) error {
   remote_cmd := fmt.Sprintf("vim-cmd hostsvc/rsrc/destroy %s", pool_id)
   stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "destroy resource pool")
   if err != nil {
-    log.Printf("[provider-esxi / resourcePoolDELETE] Failed destroy resource pool id: %s", stdout)
+		// todo more descriptive err message
+    log.Printf("[provider-esxi / resourcePoolDELETE] Failed destroy resource pool id: %s\n", stdout)
     return err
   }
   return err

@@ -10,12 +10,12 @@ import (
 )
 
 
-func guestREAD(c *Config, vmid string) (string, string, string, string, string, string, [4][3]string, error) {
+func guestREAD(c *Config, vmid string) (string, string, string, int, int, int, [4][3]string, error) {
   esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
 
   var guest_name, disk_store, resource_pool_name string
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents string
-	var memsize, numvcpus, virthwver string
+	var memsize, numvcpus, virthwver int
 	var virtual_networks [4][3]string
 
 	r,_ := regexp.Compile("")
@@ -44,10 +44,9 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
   stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if guest is in resource pool")
   nr := strings.NewReplacer("resourcePool>","", "</resourcePool","")
   vm_resource_pool_id := nr.Replace(stdout)
-	vm_resource_pool_id = strings.TrimSpace(vm_resource_pool_id)
-	log.Printf("[provider-esxi / GuestRead] resource_pool_name|%s| scanner.Text():|%s|", vm_resource_pool_id, stdout)
+	log.Printf("[provider-esxi / GuestRead] resource_pool_name|%s| scanner.Text():|%s|\n", vm_resource_pool_id, stdout)
 	resource_pool_name, err = getPoolNAME(c, vm_resource_pool_id)
-	log.Printf("[provider-esxi / GuestRead] resource_pool_name|%s| scanner.Text():|%s|", vm_resource_pool_id, err)
+	log.Printf("[provider-esxi / GuestRead] resource_pool_name|%s| scanner.Text():|%s|\n", vm_resource_pool_id, err)
 
 	//
 	//  Read vmx file into memory to read settings
@@ -55,18 +54,18 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
 	//      -Get location of vmx file on esxi host
 	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.config %s | grep vmPathName|grep -oE \"\\[.*\\]\"",vmid)
 	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get dst_vmx_ds")
-	dst_vmx_ds  = strings.TrimSpace(string(stdout))
+	dst_vmx_ds  = stdout
 	dst_vmx_ds  = strings.Trim(dst_vmx_ds, "[")
 	dst_vmx_ds  = strings.Trim(dst_vmx_ds, "]")
 
 	remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/get.config %s | grep vmPathName|awk '{print $NF}'|sed 's/[\"|,]//g'",vmid)
 	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get dst_vmx")
-	dst_vmx     = strings.TrimSpace(string(stdout))
+	dst_vmx     = stdout
 
 	dst_vmx_file = "/vmfs/volumes/" + dst_vmx_ds + "/" + dst_vmx
 
-	log.Printf("[provider-esxi] dst_vmx_file: %s", dst_vmx_file)
-	log.Printf("[provider-esxi] disk_store: %s  dst_vmx_ds:%s", disk_store, dst_vmx_file)
+	log.Printf("[provider-esxi] dst_vmx_file: %s\n", dst_vmx_file)
+	log.Printf("[provider-esxi] disk_store: %s  dst_vmx_ds:%s\n", disk_store, dst_vmx_file)
 
   remote_cmd = fmt.Sprintf("cat %s", dst_vmx_file)
 	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
@@ -81,23 +80,23 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
     switch {
     case strings.Contains(scanner.Text(),"memSize = "):
       r,_ = regexp.Compile(`\".*\"`)
-      memsize = r.FindString(scanner.Text())
+      stdout = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
-			memsize = nr.Replace(memsize)
-			log.Printf("[provider-esxi] memsize found: %s", memsize)
+			memsize,_ = strconv.Atoi(nr.Replace(stdout))
+			log.Printf("[provider-esxi] memsize found: %s\n", memsize)
 
     case strings.Contains(scanner.Text(),"numvcpus = "):
       r,_ = regexp.Compile(`\".*\"`)
-      numvcpus = r.FindString(scanner.Text())
+      stdout = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
-			numvcpus = nr.Replace(numvcpus)
-			log.Printf("[provider-esxi] numvcpus found: %s", numvcpus)
+			numvcpus,_ = strconv.Atoi(nr.Replace(stdout))
+			log.Printf("[provider-esxi] numvcpus found: %s\n", numvcpus)
 
 		case strings.Contains(scanner.Text(),"virtualHW.version = "):
       r,_ = regexp.Compile(`\".*\"`)
-      virthwver = r.FindString(scanner.Text())
-			virthwver = strings.Replace(virthwver,`"`,"",-1)
-			log.Printf("[provider-esxi] virthwver found: %s", virthwver)
+      stdout = r.FindString(scanner.Text())
+			virthwver,_ = strconv.Atoi(strings.Replace(stdout,`"`,"",-1))
+			log.Printf("[provider-esxi] virthwver found: %s\n", virthwver)
 
 		case strings.Contains(scanner.Text(),"ethernet"):
 			re := regexp.MustCompile("ethernet(.).(.*) = \"(.*)\"")
@@ -107,7 +106,7 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
 			switch results[2] {
 		  case "networkName":
 				virtual_networks[index][0] = results[3]
-				log.Printf("[provider-esxi] %s : %s", results[0], results[3])
+				log.Printf("[provider-esxi] %s : %s\n", results[0], results[3])
 
 			case "addressType":
 				if results[3] == "generated" {
@@ -117,12 +116,12 @@ func guestREAD(c *Config, vmid string) (string, string, string, string, string, 
 			case "address":
 				if isGeneratedMAC[index] == false {
 					virtual_networks[index][1] = results[3]
-					log.Printf("[provider-esxi] %s : %s", results[0], results[3])
+					log.Printf("[provider-esxi] %s : %s\n", results[0], results[3])
 				}
 
 			case "virtualDev":
 					virtual_networks[index][2] = results[3]
-					log.Printf("[provider-esxi] %s : %s", results[0], results[3])
+					log.Printf("[provider-esxi] %s : %s\n", results[0], results[3])
 			}
     }
   }

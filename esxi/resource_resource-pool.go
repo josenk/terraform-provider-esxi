@@ -126,7 +126,8 @@ func resourceRESOURCEPOOLRead(d *schema.ResourceData, m interface{}) error {
 
   cpu_min, cpu_min_expandable, cpu_max, cpu_shares, mem_min, mem_min_expandable, mem_max, mem_shares, resource_pool_name, err := resourcePoolREAD(c, d.Id())
   if err != nil {
-    return fmt.Errorf("Unable to read resource pool settings")
+    d.SetId("")
+    return nil
   }
 
   d.Set("resource_pool_name", resource_pool_name)
@@ -167,9 +168,10 @@ func resourceRESOURCEPOOLUpdate(d *schema.ResourceData, m interface{}) error {
   pool_id,err := resourcePoolUPDATE(c, d.Id(), cpu_min, cpu_min_expandable,
     cpu_max, cpu_shares, mem_min, mem_min_expandable, mem_max, mem_shares )
   if err == nil {
-    log.Printf("[provider-esxi / resourceRESOURCEPOOLUpdate] success update: " + pool_id)
+    log.Printf("[provider-esxi / resourceRESOURCEPOOLUpdate] success update: %s\n", pool_id)
   } else {
-    log.Printf("[provider-esxi / resourceRESOURCEPOOLUpdate] failed update: " + pool_id)
+    d.SetId("")
+    return nil
   }
   return nil
 }
