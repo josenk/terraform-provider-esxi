@@ -76,7 +76,6 @@ func resourcePoolCREATE(c *Config, resource_pool_name string, cpu_min int,
     mem_min_opt,mem_min_expandable_opt, mem_max_opt, mem_shares_opt, parent_pool_id, resource_pool_name)
 
 	stdout,_ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create resource pool")
-  log.Printf("[provider-esxi / resourcePoolCREATE] stdout |%s|", stdout)
   pool_id, err = getPoolID(c, resource_pool_name)
   if err == nil {
     return pool_id, err
@@ -84,6 +83,6 @@ func resourcePoolCREATE(c *Config, resource_pool_name string, cpu_min int,
 
   r := strings.NewReplacer("'vim.ResourcePool:","", "'","")
   stdout = r.Replace(stdout)
-  stdout = strings.TrimSpace(stdout)
+  stdout = stdout
   return stdout, err
 }

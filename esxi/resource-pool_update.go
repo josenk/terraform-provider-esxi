@@ -14,8 +14,9 @@ func resourcePoolUPDATE(c *Config, pool_id string, cpu_min int,
 
   esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
 	log.Println("[provider-esxi / resourcePoolUPDATE] Begin" )
-  var remote_cmd string
 	
+  var remote_cmd string
+
   cpu_min_opt := ""
   if cpu_min > 0 {
     cpu_min_opt = fmt.Sprintf("--cpu-min=%d", cpu_min)
@@ -78,10 +79,9 @@ func resourcePoolUPDATE(c *Config, pool_id string, cpu_min int,
     mem_min_opt,mem_min_expandable_opt, mem_max_opt, mem_shares_opt, pool_id)
 
 	stdout,_ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create resource pool")
-  log.Printf("[provider-esxi / resourcePoolUPDATE] stdout |%s|", stdout)
+  log.Printf("[provider-esxi / resourcePoolUPDATE] stdout |%s|\n", stdout)
 
   r := strings.NewReplacer("'vim.ResourcePool:","", "'","")
   stdout = r.Replace(stdout)
-  stdout = strings.TrimSpace(stdout)
   return stdout,err
 }
