@@ -3,50 +3,51 @@ package esxi
 import (
 	"fmt"
 	"log"
-	"errors"
+	"math/rand"
+	"time"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 
-func virtualDiskCREATE(c *Config, virtual_disk_disk_store string, virtual_disk_dir string,
-	virtual_disk_name string, virtual_disk_size int, virtual_disk_type string) (string, error) {
+func resourceVIRTUALDISKCreate(d *schema.ResourceData, m interface{}) error {
+  c := m.(*Config)
+	//esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Println("[resourceVIRTUALDISKCreate]" )
 
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-	log.Println("[provider-esxi / virtualDiskCREATE]" )
-	var virtdisk_id, remote_cmd string
-	var err error
+  virtual_disk_disk_store := d.Get("virtual_disk_disk_store").(string)
+  virtual_disk_dir        := d.Get("virtual_disk_dir").(string)
+  virtual_disk_name       := d.Get("virtual_disk_name").(string)
+  virtual_disk_size       := d.Get("virtual_disk_size").(int)
+  virtual_disk_type       := d.Get("virtual_disk_type").(string)
 
-  //
-	//  Validate disk store exists
-	//
-  remote_cmd = fmt.Sprintf("ls -d /vmfs/volumes/%s", virtual_disk_disk_store)
-	_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate disk store exists")
-	if err != nil {
-    return "", errors.New("virtual_disk_disk_store does not exist.")
+  if virtual_disk_name == "" {
+    rand.Seed(time.Now().UnixNano())
+
+	  const digits = "0123456789ABCDEF"
+	  name := make([]byte, 10)
+    for i := range name {
+	    name[i] = digits[rand.Intn(len(digits))]
+	  }
+
+    virtual_disk_name = fmt.Sprintf("vdisk_%s.vmdk", name)
   }
 
-	//
-	//  Create dir if required
   //
-	remote_cmd = fmt.Sprintf("mkdir -p /vmfs/volumes/%s/%s", virtual_disk_disk_store, virtual_disk_dir)
-	_, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create virtual disk dir")
-
-	remote_cmd = fmt.Sprintf("ls -d /vmfs/volumes/%s/%s", virtual_disk_disk_store, virtual_disk_dir)
-	_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate dir exists")
-	if err != nil {
-		return "", errors.New("Unable to create virtual_disk directory.")
-	}
-
+  //  Validate virtual_disk_name
   //
-	//  Create virtual disk
-	//
-	virtdisk_id = fmt.Sprintf("/vmfs/volumes/%s/%s/%s", virtual_disk_disk_store, virtual_disk_dir, virtual_disk_name)
 
-	remote_cmd = fmt.Sprintf("/bin/vmkfstools -c %dG -d %s %s", virtual_disk_size,
-		virtual_disk_type, virtdisk_id)
-	_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Create virtual_disk")
-	if err != nil {
-		return "", errors.New("Unable to create virtual_disk")
-	}
+  // todo,  check invalid chars (quotes, slash, period, comma)
+  // todo,  must end with .vmdk
 
-  return virtdisk_id, err
+
+  virtdisk_id,err := virtualDiskCREATE(c, virtual_disk_disk_store, virtual_disk_dir,
+    virtual_disk_name, virtual_disk_size, virtual_disk_type)
+  if err == nil {
+    d.SetId(virtdisk_id)
+  } else {
+    log.Println("[provider-esxi] Error: " + err.Error())
+    d.SetId("")
+  }
+
+  return nil
 }

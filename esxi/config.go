@@ -6,10 +6,10 @@ import (
 )
 
 type Config struct {
-	Esxi_hostname string
-	Esxi_hostport string
-	Esxi_username string
-	Esxi_password string
+	esxiHostName string
+	esxiHostPort string
+	esxiUserName string
+	esxiPassword string
 }
 
 func (c *Config) validateEsxiCreds() error {

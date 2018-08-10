@@ -1,98 +1,39 @@
 package esxi
 
 import (
-	"fmt"
 	"log"
-  "strings"
-  "bufio"
-  "regexp"
-  "strconv"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 
-func resourcePoolREAD(c *Config, pool_id string) (int, bool, int, string, int, bool, int, string, string, error) {
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-  log.Println("[provider-esxi / resourcePoolREAD] Begin" )
-  var cpu_shares, mem_shares string
-  var cpu_min, cpu_max, mem_min, mem_max, tmpvar int
-  var cpu_min_expandable, mem_min_expandable bool
+func resourceRESOURCEPOOLRead(d *schema.ResourceData, m interface{}) error {
+  c := m.(*Config)
 
-  remote_cmd := fmt.Sprintf("vim-cmd hostsvc/rsrc/pool_config_get %s", pool_id)
-  stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "resource pool_config_get")
+	log.Println("[resourceRESOURCEPOOLRead]" )
 
-  if strings.Contains(stdout, "deleted") == true {
-    log.Printf("[provider-esxi] Already deleted: %s\n", err)
-    return 0, false, 0, "", 0, false, 0, "", "", err
-  }
+	var cpu_shares, mem_shares string
+  var cpu_min, cpu_max, mem_min, mem_max int
+  var resource_pool_name, cpu_min_expandable, mem_min_expandable string
+	var err error
+
+	pool_id := d.Id()
+
+  // Refresh
+	resource_pool_name, cpu_min, cpu_min_expandable, cpu_max, cpu_shares, mem_min, mem_min_expandable, mem_max, mem_shares, err = resourcePoolRead(c, pool_id)
   if err != nil {
-    log.Printf("[provider-esxi] Failed to get %s: %s\n", "resource pool_config_get", err)
-    return 0, false, 0, "", 0, false, 0, "", "", err
-  }
+	  d.SetId("")
+		return nil
+	}
 
-  is_cpu_flag := true
+  d.Set("resource_pool_name", resource_pool_name)
+  d.Set("cpu_min", cpu_min)
+  d.Set("cpu_min_expandable", cpu_min_expandable)
+  d.Set("cpu_max", cpu_max)
+  d.Set("cpu_shares", cpu_shares)
+  d.Set("mem_min", mem_min)
+  d.Set("mem_min_expandable", mem_min_expandable)
+  d.Set("mem_max", mem_max)
+  d.Set("mem_shares", mem_shares)
 
-  scanner := bufio.NewScanner(strings.NewReader(stdout))
-  for scanner.Scan() {
-    switch {
-    case strings.Contains(scanner.Text(),"memoryAllocation = "):
-      is_cpu_flag = false
-
-    case strings.Contains(scanner.Text(),"reservation = "):
-      r,_ := regexp.Compile("[0-9]+")
-      if is_cpu_flag == true {
-        cpu_min,_ = strconv.Atoi(r.FindString(scanner.Text()))
-      } else {
-        mem_min,_ = strconv.Atoi(r.FindString(scanner.Text()))
-      }
-
-    case strings.Contains(scanner.Text(),"expandableReservation = "):
-      r,_ := regexp.Compile("(true|false)")
-      if is_cpu_flag == true {
-        cpu_min_expandable,_ = strconv.ParseBool(r.FindString(scanner.Text()))
-      } else {
-        mem_min_expandable,_ = strconv.ParseBool(r.FindString(scanner.Text()))
-      }
-
-    case strings.Contains(scanner.Text(),"limit = "):
-      r,_ := regexp.Compile("-?[0-9]+")
-			tmpvar,_ = strconv.Atoi(r.FindString(scanner.Text()))
-			if tmpvar < 0 {
-				tmpvar = 0
-			}
-      if is_cpu_flag == true {
-        cpu_max = tmpvar
-      } else {
-        mem_max = tmpvar
-      }
-
-    case strings.Contains(scanner.Text(),"shares = "):
-      r,_ := regexp.Compile("[0-9]+")
-      if is_cpu_flag == true {
-        cpu_shares = r.FindString(scanner.Text())
-      } else {
-        mem_shares = r.FindString(scanner.Text())
-      }
-
-    case strings.Contains(scanner.Text(),"level = "):
-      r,_ := regexp.Compile("(low|high|normal)")
-      if r.FindString(scanner.Text()) != "" {
-        if is_cpu_flag == true {
-          cpu_shares = r.FindString(scanner.Text())
-        } else {
-          mem_shares = r.FindString(scanner.Text())
-        }
-      }
-    }
-  }
-
-  resource_pool_name, err := getPoolNAME(c, pool_id)
-  if err != nil {
-    return 0, false, 0, "", 0, false, 0, "", "", err
-  }
-
-  log.Printf("[provider-esxi / resourcePoolREAD] |%s|%s|%s|%s|%s|%s|%s|%s|%s|\n",
-     cpu_min, cpu_min_expandable, cpu_max, cpu_shares, mem_min, mem_min_expandable,
-     mem_max, mem_shares, resource_pool_name)
-  return cpu_min, cpu_min_expandable, cpu_max, cpu_shares, mem_min,
-   mem_min_expandable, mem_max, mem_shares, resource_pool_name, err
+  return nil
 }
