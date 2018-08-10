@@ -10,13 +10,31 @@ import (
 	"time"
 )
 
-func getDst_vmx_file(c *Config, vmid string) (string, error) {
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-  log.Printf("[provider-esxi / getDst_vmx_file]\n")
+func getBootDiskPath(c *Config, vmid string) (string, error) {
+	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Printf("[getBootDiskPath]\n")
 
-  //      -Get location of vmx file on esxi host
+	var remote_cmd, stdout string
+	var err error
+
+	remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/device.getdevices %s | grep -A10 'key = 2000'|grep -m 1 fileName", vmid)
+	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get boot disk")
+	if err != nil {
+		log.Printf("[provider-esxi] Failed get boot disk path: %s\n", stdout)
+		return "Failed get boot disk path:", err
+	}
+	r := strings.NewReplacer("fileName = \"[", "/vmfs/volumes/",
+													 "] ", "/", "\",", "")
+	return r.Replace(stdout), err
+}
+
+func getDst_vmx_file(c *Config, vmid string) (string, error) {
+  esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Printf("[getDst_vmx_file]\n")
+
   var dst_vmx_ds, dst_vmx, dst_vmx_file string
 
+  //      -Get location of vmx file on esxi host
   remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/get.config %s | grep vmPathName|grep -oE \"\\[.*\\]\"",vmid)
 	stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get dst_vmx_ds")
 	dst_vmx_ds   = stdout
@@ -32,13 +50,13 @@ func getDst_vmx_file(c *Config, vmid string) (string, error) {
 }
 
 func readVmx_contents(c *Config, vmid string) (string, error) {
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-  log.Printf("[provider-esxi / getVmx_contents]\n")
+  esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Printf("[getVmx_contents]\n")
 
   var remote_cmd, vmx_contents string
 
   dst_vmx_file,err := getDst_vmx_file(c, vmid)
-  remote_cmd = fmt.Sprintf("cat %s", dst_vmx_file)
+  remote_cmd = fmt.Sprintf("cat \"%s\"", dst_vmx_file)
   vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
 
   return vmx_contents, err
@@ -46,9 +64,9 @@ func readVmx_contents(c *Config, vmid string) (string, error) {
 
 
 func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numvcpus int,
-	virthwver int, virtual_networks [4][3]string, virtual_disks [60][2]string) error {
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-  log.Printf("[provider-esxi / updateVmx_contents]\n")
+	virthwver int, guestos string,virtual_networks [4][3]string, virtual_disks [60][2]string) error {
+  esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Printf("[updateVmx_contents]\n")
 
   var regexReplacement, remote_cmd string
 
@@ -76,6 +94,13 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	if virthwver != 0 {
 		re := regexp.MustCompile("virtualHW.version = \".*\"")
 		regexReplacement = fmt.Sprintf("virtualHW.version = \"%d\"", virthwver)
+		vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+	}
+
+	// modify guestos
+	if guestos != "" {
+		re := regexp.MustCompile("guestOS = \".*\"")
+		regexReplacement = fmt.Sprintf("guestOS = \"%s\"", guestos)
 		vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
 	}
 
@@ -197,10 +222,47 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
   return err
 }
 
+func cleanStorageFromVmx(c *Config, vmid string) error {
+	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	log.Printf("[cleanStorageFromVmx]\n")
+
+	var remote_cmd string
+
+	vmx_contents, err := readVmx_contents(c, vmid)
+	if err != nil {
+		log.Printf("[provider-esxi] Failed get vmx contents: %s\n", err)
+		return err
+	}
+
+	for x := 0; x < 4; x++ {
+		for y := 0; y < 16; y++ {
+			if ! (x == 0 && y == 0) {
+  			regexReplacement := fmt.Sprintf("scsi%d:%d.*", x, y)
+	      re := regexp.MustCompile(regexReplacement)
+	      vmx_contents = re.ReplaceAllString(vmx_contents, "")
+			}
+		}
+  }
+
+	//
+	//  Write vmx file to esxi host
+	//
+	vmx_contents = strings.Replace(vmx_contents, "\"", "\\\"", -1)
+
+  dst_vmx_file,err := getDst_vmx_file(c, vmid)
+
+  remote_cmd = fmt.Sprintf("echo \"%s\" | grep '[^[:blank:]]' >%s", vmx_contents, dst_vmx_file)
+	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "write guest_name.vmx file")
+
+	remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/reload %s",vmid)
+	_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/reload")
+  return err
+}
+
 
 func guestPowerOn(c *Config, vmid string) (string, error) {
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-  log.Printf("[provider-esxi / guestPowerOn]\n")
+  esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Printf("[guestPowerOn]\n")
 
 	if guestPowerGetState(c, vmid) == "on" {
 		return "",nil
@@ -218,8 +280,8 @@ func guestPowerOn(c *Config, vmid string) (string, error) {
 }
 
 func guestPowerOff(c *Config, vmid string, guest_shutdown_timeout int) (string, error) {
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-  log.Printf("[provider-esxi / guestPowerOff]\n")
+  esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Printf("[guestPowerOff]\n")
 
   var remote_cmd, stdout string
 
@@ -257,8 +319,8 @@ func guestPowerOff(c *Config, vmid string, guest_shutdown_timeout int) (string, 
 
 
 func guestPowerGetState(c *Config, vmid string) string {
-  esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-  log.Printf("[provider-esxi / guestPowerGetState]\n")
+  esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+  log.Printf("[guestPowerGetState]\n")
 
   remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.getstate %s", vmid)
   stdout, _   := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.getstate")
@@ -274,9 +336,9 @@ func guestPowerGetState(c *Config, vmid string) string {
 	}
 }
 
-func guestGetIpAddress(c *Config, vmid string, guest_net_timeout int) string {
-	esxiSSHinfo := SshConnectionStruct{c.Esxi_hostname, c.Esxi_hostport, c.Esxi_username, c.Esxi_password}
-	log.Printf("[provider-esxi / guestGetIpAddress]\n")
+func guestGetIpAddress(c *Config, vmid string, guest_startup_timeout int) string {
+	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	log.Printf("[guestGetIpAddress]\n")
 
 	var remote_cmd, stdout, ip_address, ip_address2 string
 	var uptime int
@@ -290,7 +352,7 @@ func guestGetIpAddress(c *Config, vmid string, guest_net_timeout int) string {
 	//  Check uptime of guest.
 	//
 	uptime = 0
-	for uptime < guest_net_timeout {
+	for uptime < guest_startup_timeout {
 		//  Primary method to get IP
 		remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null |grep -A 5 'deviceConfigId = 4000' |tail -1|grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5]).){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])'",vmid)
 		stdout, _   = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get ip_address method 1")
@@ -326,36 +388,4 @@ func guestGetIpAddress(c *Config, vmid string, guest_net_timeout int) string {
 	}
 
 	return ""
-}
-
-func validateVirtualDiskSlot(slot string) string {
-	var result string
-	
-	// Split on comma.
-  fields := strings.Split(slot + ":UnSet", ":")
-
-  // if using simple format
-  if fields[1] == "UnSet" {
-    fields[1] = fields[0]
-    fields[0] = "0"
-  }
-
-  field0i, _ := strconv.Atoi(fields[0])
-  field1i, _ := strconv.Atoi(fields[1])
-  result = "ok"
-
-  if field0i < 0 || field0i > 3 {
-    result = "scsi controller id out of range"
-  }
-  if field1i < 0 || field1i > 15 {
-    result = "scsi id out of range"
-  }
-  if field0i == 0 && field1i == 0 {
-    result = "scsi id used by boot disk"
-  }
-  if field1i == 7 {
-    result = "scsi id 7 not allowed"
-  }
-
-  return result
 }

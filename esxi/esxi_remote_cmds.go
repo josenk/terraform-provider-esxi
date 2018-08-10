@@ -35,17 +35,17 @@ func connectToHost(esxiSSHinfo SshConnectionStruct) (*ssh.Client, *ssh.Session, 
 
 //  Run any remote ssh command on esxi server and return results.
 func runRemoteSshCommand(esxiSSHinfo SshConnectionStruct, remoteSshCommand string, shortCmdDesc string) (string, error){
-
-  log.Println("[provider-esxi / runRemoteSshCommand] :" + shortCmdDesc )
+  log.Println("[runRemoteSshCommand] :" + shortCmdDesc )
+	
 	client, session, err := connectToHost(esxiSSHinfo)
 	if err != nil {
-		log.Println("[provider-esxi / runRemoteSshCommand] Failed err: " + err.Error())
+		log.Println("[runRemoteSshCommand] Failed err: " + err.Error())
 		return "Failed to ssh to esxi host", err
   }
 
 	stdout_raw, err := session.CombinedOutput(remoteSshCommand)
 	stdout := strings.TrimSpace(string(stdout_raw))
-	log.Printf("[provider-esxi / runRemoteSshCommand] cmd:/%s/\n stdout:/%s/\nstderr:/%s/\n", remoteSshCommand, stdout, err)
+	log.Printf("[runRemoteSshCommand] cmd:/%s/\n stdout:/%s/\nstderr:/%s/\n", remoteSshCommand, stdout, err)
 
 	client.Close()
 	return stdout, err

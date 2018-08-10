@@ -21,7 +21,7 @@ func Provider() terraform.ResourceProvider {
           Type:     schema.TypeString,
           Required: true,
           ForceNew: true,
-          DefaultFunc: schema.EnvDefaultFunc("esxi_hostname", "esxi"),
+          DefaultFunc: schema.EnvDefaultFunc("", "esxi"),
           Description: "The esxi hostname or IP address.",
       },
       "esxi_hostport": &schema.Schema{
@@ -54,10 +54,10 @@ func Provider() terraform.ResourceProvider {
 
 func configureProvider(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		Esxi_hostname: d.Get("esxi_hostname").(string),
-		Esxi_hostport: d.Get("esxi_hostport").(string),
-		Esxi_username: d.Get("esxi_username").(string),
-		Esxi_password: d.Get("esxi_password").(string),
+		esxiHostName: d.Get("esxi_hostname").(string),
+		esxiHostPort: d.Get("esxi_hostport").(string),
+		esxiUserName: d.Get("esxi_username").(string),
+		esxiPassword: d.Get("esxi_password").(string),
 	}
 
 	if err := config.validateEsxiCreds(); err != nil {
