@@ -1,16 +1,55 @@
+Terraform Provider
+==================
+
+- Website: https://www.terraform.io
+- [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
+- Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool)
+
+
+Requirements
+------------
+-   [Terraform](https://www.terraform.io/downloads.html) 0.10.1+
+-   [Go](https://golang.org/doc/install) 1.9 (to build the provider plugin)
+-   [ovftool](https://www.vmware.com/support/developer/ovf/) from VMware.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You can manually set your path, or install ovftool in the \HashiCorp\Vagrant\bin directory.
+-   You MUST enable ssh access on your ESXi hypervisor.
+  * Google 'How to enable ssh access on esxi'
+-   In general, you should know how to use terraform, esxi and some networking...
+
+
+Building The Provider
+---------------------
+
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-esxi`
+
+```sh
+
+export GOPATH="/usr/lib"
+go get -u golang.org/x/crypto/ssh
+
+mkdir -p $GOPATH/src/github.com/hashicorp
+cd $GOPATH/src/github.com/hashicorp
+git clone https://github.com/hashicorp/terraform.git
+
+mkdir -p $GOPATH/src/github.com/terraform-providers
+cd $GOPATH/src/github.com/terraform-providers
+git clone https://github.com/josenk/terraform-provider-esxi.git
+
+cd $GOPATH/src/github.com/terraform-providers/terraform-provider-esxi
+go build -o terraform-provider-esxi_`cat version`
+
+cp terraform-provider-esxi_`cat version` /usr/local/bin
+```
+
 Terraform-provider-esxi plugin
 ==============================
 This is a Terraform plugin that adds a VMware ESXi provider support.  This allows Terraform to control and provision VMs directly on an ESXi hypervisor without a need for vCenter or VShpere.   ESXi hypervisor is a free download from VMware!
 >https://www.vmware.com/go/get-free-esxi
 
+
 What's New:
 -----------
 * Terraform can read existing Guest VMs & Resource pools by name. (infra to code)
 
-
-Documentation:
--------------
-* More Documentation is needed.  Some error messages are limited.  I'm adding features and updating documentation as time permits...
 
 * If you don't know terraform, I highly recommend you read through the introduction on the hashicorp website.
 >https://www.terraform.io/intro/getting-started/install.html
@@ -27,6 +66,7 @@ Features and Compatibility
 * Terraform will Create, Destroy, Update & Read Guest VMs.
 * Terraform will Create, Destroy, Update & Read Extra Storage for Guests.
 
+
 Requirements
 ------------
 1. This is a Terraform plugin, so you need Terraform installed...  :-)
@@ -36,9 +76,11 @@ Requirements
   * Google 'How to enable ssh access on esxi'
 4. In general, you should know how to use terraform, esxi and some networking...
 
+
 Why this plugin?
 ----------------
 Not everyone has vCenter, vSphere, expensive APIs...  These cost $$$.  ESXi is free!
+
 
 How to install
 --------------
@@ -48,7 +90,6 @@ Download this plugin from github and place a copy of it in your path or current 
 
 How to use and configure a main.tf file
 ---------------------------------------
-
 1. cd SOMEDIR
 2. `vi main.tf`  # Use the contents of this example main.tf as a template. Specify provider parameters to access your ESXi host.  Modify the resources for resource pools and guest vm.
 
@@ -60,47 +101,19 @@ provider "esxi" {
   esxi_password      = "MyPassword"
 }
 
-resource "esxi_resource_pool" "MyPool" {
-  resource_pool_name = "MyPool"
-  cpu_min            = "100"
-  mem_min            = "200"
-}
-
-resource "esxi_virtual_disk" "vdisk1" {
-  virtual_disk_disk_store = "MyDiskStore"
-  virtual_disk_dir        = "Terraform"
-  virtual_disk_size       = 6
-  virtual_disk_type       = "thin"
-}
-
 resource "esxi_guest" "vmtest" {
-  depends_on         = ["esxi_resource_pool_name.MyPool"]
-  guest_name         = "v-test"
+  guest_name         = "vmtest"
+  disk_store         = "MyDiskStore"
 
   #
-  #  Specify an existing guest to clone, an ovf source, or neither to build a guest vm from scratch
+  #  Specify an existing guest to clone, an ovf source, or neither to build a bare-metal guest vm.
   #
   #clone_from_vm      = "Templates/centos7"
-  #ovf_source        = "/my_local_system_path/centos-7-min/centos-7.vmx"
+  #ovf_source        = "/local_path/centos-7.vmx"
 
-  disk_store         = "MyDiskStore"
-  resource_pool_name = "MyPool"
   network_interfaces = [
     {
       virtual_network = "VM Network"
-      mac_address     = "00:50:56:a1:b1:c1"
-      nic_type        = "e1000"
-    },
-    {
-      virtual_network = "VM Network 2"
-      nic_type        = "e1000"
-    },
-  ]
-
-  virtual_disks = [
-    {
-      virtual_disk_id = "${esxi_virtual_disk.vdisk1.id}"
-      slot            = "0:1"
     },
   ]
 }
@@ -171,7 +184,6 @@ Configuration reference
 Known issues with vmware_esxi
 -----------------------------
 * More features coming.
-* I need help documenting.
 
 
 Version History
