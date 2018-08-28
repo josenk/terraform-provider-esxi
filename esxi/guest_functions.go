@@ -20,7 +20,7 @@ func getBootDiskPath(c *Config, vmid string) (string, error) {
 	remote_cmd  = fmt.Sprintf("vim-cmd vmsvc/device.getdevices %s | grep -A10 'key = 2000'|grep -m 1 fileName", vmid)
 	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get boot disk")
 	if err != nil {
-		log.Printf("[provider-esxi] Failed get boot disk path: %s\n", stdout)
+		log.Printf("[getBootDiskPath] Failed get boot disk path: %s\n", stdout)
 		return "Failed get boot disk path:", err
 	}
 	r := strings.NewReplacer("fileName = \"[", "/vmfs/volumes/",
@@ -72,8 +72,11 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 
   vmx_contents, err := readVmx_contents(c, vmid)
 	if err != nil {
-		log.Printf("[provider-esxi] Failed get vmx contents: %s\n", err)
+		log.Printf("[updateVmx_contents] Failed get vmx contents: %s\n", err)
 		return err
+	}
+	if strings.Contains(vmx_contents, "Unable to find a VM corresponding") {
+		return nil
 	}
 
 	// modify memsize
@@ -134,12 +137,12 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 		networkType = ""
 
 	  for i := 0; i < 4; i++ {
-	  	log.Printf("[provider-esxi] i: %s\n", i)
+	  	log.Printf("[updateVmx_contents] i: %s\n", i)
 
 	  	if virtual_networks[i][0] != "" {
 
 				//  Set virtual_network name
-	  		log.Printf("[provider-esxi] virtual_networks[i][0]: %s\n", virtual_networks[i][0])
+	  		log.Printf("[updateVmx_contents] virtual_networks[i][0]: %s\n", virtual_networks[i][0])
 	  		tmpvar = fmt.Sprintf("ethernet%d.networkName = \"%s\"\n", i, virtual_networks[i][0])
 	  		vmx_contents_new = vmx_contents_new + tmpvar
 
@@ -211,7 +214,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	//  Write vmx file to esxi host
 	//
 	vmx_contents = strings.Replace(vmx_contents, "\"", "\\\"", -1)
-	log.Printf("[provider-esxi] New guest_name.vmx: %s\n", vmx_contents)
+	log.Printf("[updateVmx_contents] New guest_name.vmx: %s\n", vmx_contents)
 
   dst_vmx_file,err := getDst_vmx_file(c, vmid)
   remote_cmd = fmt.Sprintf("echo \"%s\" >%s", vmx_contents, dst_vmx_file)
@@ -230,7 +233,7 @@ func cleanStorageFromVmx(c *Config, vmid string) error {
 
 	vmx_contents, err := readVmx_contents(c, vmid)
 	if err != nil {
-		log.Printf("[provider-esxi] Failed get vmx contents: %s\n", err)
+		log.Printf("[updateVmx_contents] Failed get vmx contents: %s\n", err)
 		return err
 	}
 
@@ -324,6 +327,9 @@ func guestPowerGetState(c *Config, vmid string) string {
 
   remote_cmd  := fmt.Sprintf("vim-cmd vmsvc/power.getstate %s", vmid)
   stdout, _   := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/power.getstate")
+	if strings.Contains(stdout, "Unable to find a VM corresponding") {
+		return "Unknown"
+	}
 
 	if strings.Contains(stdout, "Powered off") == true {
 		return "off"
