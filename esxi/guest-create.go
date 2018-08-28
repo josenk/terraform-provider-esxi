@@ -29,11 +29,11 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	//  Check if Disk Store already exists
 	//
-	remote_cmd = fmt.Sprintf("ls -d \"/vmfs/volumes/%s\"", disk_store)
-	_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if disk_store already exists.")
+	err = diskStoreValidate(c, disk_store)
 	if err != nil {
-		return "", fmt.Errorf("Disk Store does not exists :%s\n", disk_store)
+		return "", err
 	}
+
 
 	//
 	//  Check if guest already exists
@@ -46,7 +46,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
   if vmid != "" {
 		  // We don't need to create the VM.   It already exists.
-			fmt.Printf("[provider-esxi] guest %s already exists vmid: \n",guest_name, stdout)
+			fmt.Printf("[guestCREATE] guest %s already exists vmid: \n",guest_name, stdout)
 
 			//
 			//   Power off guest if it's powered on.
@@ -145,7 +145,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		//
 		//  Write vmx file to esxi host
 		//
-		log.Printf("[provider-esxi] New guest_name.vmx: %s\n", vmx_contents)
+		log.Printf("[guestCREATE] New guest_name.vmx: %s\n", vmx_contents)
 
 		dst_vmx_file := fmt.Sprintf("%s/%s.vmx", fullPATH, guest_name)
 
@@ -163,7 +163,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		}
 
     poolID, err := getPoolID(c, resource_pool_name)
-		log.Println("[provider-esxi] DEBUG: " + poolID)
+		log.Println("[guestCREATE] DEBUG: " + poolID)
 		if err != nil {
 			log.Printf("Failed to use Resource Pool ID:%s\n", poolID)
 			return "", fmt.Errorf("Failed to use Resource Pool ID:%s\n", poolID)
@@ -186,11 +186,11 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	  	"-dm=%s --name='%s' --overwrite -ds='%s' '%s' '%s'",boot_disk_type, guest_name, disk_store, src_path, dst_path)
 	  cmd := exec.Command("/bin/bash", "-c", ovf_cmd)
 
-    log.Println("[provider-esxi] ovf_cmd: " + ovf_cmd )
+    log.Println("[guestCREATE] ovf_cmd: " + ovf_cmd )
 
 	  cmd.Stdout = &out
 	  err = cmd.Run()
-	  log.Printf("[provider-esxi] ovftool output: %q\n", out.String())
+	  log.Printf("[guestCREATE] ovftool output: %q\n", out.String())
 	  if err != nil {
 	  	log.Printf("Failed, There was an ovftool Error:%s\n", err.Error())
 	  	return "", fmt.Errorf("There was an ovftool Error:%s\n", err.Error())
@@ -203,7 +203,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		"tail -1", guest_name, guest_name)
 
   vmid, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get vmid")
-	log.Printf("[provider-esxi] get_vmid_cmd: %s\n", vmid)
+	log.Printf("[guestCREATE] get_vmid_cmd: %s\n", vmid)
 	if err != nil {
 		log.Printf("Failed get vmid: %s\n", err)
 		return "", fmt.Errorf("Failed get vmid: %s\n", err)

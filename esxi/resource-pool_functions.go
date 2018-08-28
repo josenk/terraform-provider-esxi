@@ -99,11 +99,11 @@ func resourcePoolRead(c *Config, pool_id string) (string, int, string, int, stri
   stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "resource pool_config_get")
 
   if strings.Contains(stdout, "deleted") == true {
-    log.Printf("[provider-esxi] Already deleted: %s\n", err)
+    log.Printf("[resourcePoolRead] Already deleted: %s\n", err)
 		return "", 0, "", 0, "", 0, "", 0, "", nil
   }
   if err != nil {
-    log.Printf("[provider-esxi] Failed to get %s: %s\n", "resource pool_config_get", err)
+    log.Printf("[resourcePoolRead] Failed to get %s: %s\n", "resource pool_config_get", err)
 		return "", 0, "", 0, "", 0, "", 0, "", errors.New("Failed to get Resource Pool config.")
   }
 
@@ -165,7 +165,7 @@ func resourcePoolRead(c *Config, pool_id string) (string, int, string, int, stri
 
   resource_pool_name, err := getPoolNAME(c, pool_id)
   if err != nil {
-    log.Printf("[provider-esxi] Failed to get Resource Pool name: %s\n", err)
+    log.Printf("[resourcePoolRead] Failed to get Resource Pool name: %s\n", err)
 		return "", 0, "", 0, "", 0, "", 0, "", errors.New("Failed to get Resource Pool name.")
   }
 

@@ -188,6 +188,8 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.0.1 Validate DiskStores and refresh
+* 1.0.0 First Major release
 * 0.1.2 Add ability to manage existing Guest VMs.  A lot of code cleanup, various fixes, more validation.
 * 0.1.0 Add virtual_disk resource.
 * 0.0.8 Add virthwver.

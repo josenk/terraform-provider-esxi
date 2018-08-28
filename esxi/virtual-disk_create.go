@@ -45,8 +45,9 @@ func resourceVIRTUALDISKCreate(d *schema.ResourceData, m interface{}) error {
   if err == nil {
     d.SetId(virtdisk_id)
   } else {
-    log.Println("[provider-esxi] Error: " + err.Error())
+    log.Println("[resourceVIRTUALDISKCreate] Error: " + err.Error())
     d.SetId("")
+		return fmt.Errorf("Failed to create virtual Disk :%s\n", virtual_disk_name)
   }
 
   return nil

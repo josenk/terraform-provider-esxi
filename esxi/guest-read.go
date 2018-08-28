@@ -18,7 +18,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
   var power string
 
   guest_name, disk_store, disk_size, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
-  if err != nil {
+  if err != nil || guest_name == "" {
     d.SetId("")
     return nil
   }
@@ -68,6 +68,10 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
   remote_cmd := fmt.Sprintf("vim-cmd  vmsvc/get.summary %s", vmid)
   stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get Guest summary")
 
+	if strings.Contains(stdout, "Unable to find a VM corresponding") {
+		return "", "", "", "", "", "", "", "", "", virtual_networks, "", nil
+	}
+
   scanner := bufio.NewScanner(strings.NewReader(stdout))
   for scanner.Scan() {
     switch {
@@ -109,8 +113,8 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 
 	dst_vmx_file = "/vmfs/volumes/" + dst_vmx_ds + "/" + dst_vmx
 
-	log.Printf("[provider-esxi] dst_vmx_file: %s\n", dst_vmx_file)
-	log.Printf("[provider-esxi] disk_store: %s  dst_vmx_ds:%s\n", disk_store, dst_vmx_file)
+	log.Printf("[resourceGUESTRead] dst_vmx_file: %s\n", dst_vmx_file)
+	log.Printf("[resourceGUESTRead] disk_store: %s  dst_vmx_ds:%s\n", disk_store, dst_vmx_file)
 
   remote_cmd = fmt.Sprintf("cat \"%s\"", dst_vmx_file)
 	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
@@ -128,26 +132,26 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
       stdout = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
 			memsize = nr.Replace(stdout)
-			log.Printf("[provider-esxi] memsize found: %s\n", memsize)
+			log.Printf("[resourceGUESTRead] memsize found: %s\n", memsize)
 
     case strings.Contains(scanner.Text(),"numvcpus = "):
       r,_ = regexp.Compile(`\".*\"`)
       stdout = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
 			numvcpus = nr.Replace(stdout)
-			log.Printf("[provider-esxi] numvcpus found: %s\n", numvcpus)
+			log.Printf("[resourceGUESTRead] numvcpus found: %s\n", numvcpus)
 
 		case strings.Contains(scanner.Text(),"virtualHW.version = "):
       r,_ = regexp.Compile(`\".*\"`)
       stdout = r.FindString(scanner.Text())
 			virthwver = strings.Replace(stdout,`"`,"",-1)
-			log.Printf("[provider-esxi] virthwver found: %s\n", virthwver)
+			log.Printf("[resourceGUESTRead] virthwver found: %s\n", virthwver)
 
 		case strings.Contains(scanner.Text(),"guestOS = "):
       r,_ = regexp.Compile(`\".*\"`)
       stdout = r.FindString(scanner.Text())
 			guestos = strings.Replace(stdout,`"`,"",-1)
-			log.Printf("[provider-esxi] guestos found: %s\n", guestos)
+			log.Printf("[resourceGUESTRead] guestos found: %s\n", guestos)
 
 		case strings.Contains(scanner.Text(),"ethernet"):
 			re := regexp.MustCompile("ethernet(.).(.*) = \"(.*)\"")
@@ -157,7 +161,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 			switch results[2] {
 		  case "networkName":
 				virtual_networks[index][0] = results[3]
-				log.Printf("[provider-esxi] %s : %s\n", results[0], results[3])
+				log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
 
 			case "addressType":
 				if results[3] == "generated" {
@@ -167,18 +171,18 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 			case "generatedAddress":
 				if isGeneratedMAC[index] == true {
 					virtual_networks[index][1] = results[3]
-					log.Printf("[provider-esxi] %s : %s\n", results[0], results[3])
+					log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
 				}
 
 			case "address":
 				if isGeneratedMAC[index] == false {
 					virtual_networks[index][1] = results[3]
-					log.Printf("[provider-esxi] %s : %s\n", results[0], results[3])
+					log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
 				}
 
 			case "virtualDev":
 					virtual_networks[index][2] = results[3]
-					log.Printf("[provider-esxi] %s : %s\n", results[0], results[3])
+					log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
 			}
     }
   }
