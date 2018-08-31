@@ -12,7 +12,20 @@ func connectToHost(esxiSSHinfo SshConnectionStruct) (*ssh.Client, *ssh.Session, 
 
 	sshConfig := &ssh.ClientConfig{
 		User: esxiSSHinfo.user,
-		Auth: []ssh.AuthMethod{ssh.Password(esxiSSHinfo.pass)},
+		Auth: []ssh.AuthMethod{
+			ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+				// Reply password to all questions
+				answers := make([]string, len(questions))
+				for i, _ := range answers {
+					answers[i] = esxiSSHinfo.pass
+				}
+
+				return answers, nil
+			}),
+		},
+	}
+	sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+
 	}
 	sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 
