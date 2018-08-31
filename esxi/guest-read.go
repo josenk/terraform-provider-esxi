@@ -17,7 +17,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 
   var power string
 
-  guest_name, disk_store, disk_size, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
+  guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
   if err != nil || guest_name == "" {
     d.SetId("")
     return nil
@@ -26,6 +26,9 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
   d.Set("guest_name",guest_name)
   d.Set("disk_store",disk_store)
   d.Set("disk_size",disk_size)
+	if boot_disk_type != "Unknown" {
+  	d.Set("boot_disk_type",boot_disk_type)
+	}
   d.Set("resource_pool_name",resource_pool_name)
   d.Set("memsize",memsize)
   d.Set("numvcpus",numvcpus)
@@ -54,10 +57,10 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 }
 
 
-func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, [4][3]string, string, error) {
+func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [4][3]string, string, error) {
   esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 
-  var guest_name, disk_store, resource_pool_name, guestos, ip_address string
+  var guest_name, disk_store, virtual_disk_type, resource_pool_name, guestos, ip_address string
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents, power string
 	var disk_size int
 	var memsize, numvcpus, virthwver string
@@ -69,7 +72,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
   stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get Guest summary")
 
 	if strings.Contains(stdout, "Unable to find a VM corresponding") {
-		return "", "", "", "", "", "", "", "", "", virtual_networks, "", nil
+		return "", "", "", "", "", "", "", "", "", "", virtual_networks, "", nil
 	}
 
   scanner := bufio.NewScanner(strings.NewReader(stdout))
@@ -203,9 +206,9 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 
 	// Get boot disk size
 	boot_disk_vmdkPATH,_ := getBootDiskPath(c, vmid)
-	_, _, _, disk_size, _, err = virtualDiskREAD(c, boot_disk_vmdkPATH)
+	_, _, _, disk_size, virtual_disk_type, err = virtualDiskREAD(c, boot_disk_vmdkPATH)
 	str_disk_size := strconv.Itoa(disk_size)
 
   // return results
-  return guest_name, disk_store, str_disk_size, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err
+  return guest_name, disk_store, str_disk_size, virtual_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err
 }

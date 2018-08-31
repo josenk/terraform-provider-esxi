@@ -46,7 +46,7 @@ func resourceVIRTUALDISK() *schema.Resource {
           Required: true,
           ForceNew: true,
           DefaultFunc: schema.EnvDefaultFunc("virtual_disk_type", "thin"),
-          Description: "Virtual Disk type.  (thin, thick or eagerzeroedthick)",
+          Description: "Virtual Disk type.  (thin, zeroedthick or eagerzeroedthick)",
       },
     },
   }

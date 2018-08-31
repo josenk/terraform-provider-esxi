@@ -20,8 +20,8 @@ provider "esxi" {
 #  by terraform, but it will not boot to any OS.   It will however attempt
 #  to network boot.
 #
-resource "esxi_guest" "vmtest1" {
-  guest_name         = "vmtest1"      # Required, Specify the Guest Name
+resource "esxi_guest" "vmtest01" {
+  guest_name         = "vmtest01"      # Required, Specify the Guest Name
   disk_store         = "DS_001"       # Required, Specify an existing Disk Store
   network_interfaces = [
     {
