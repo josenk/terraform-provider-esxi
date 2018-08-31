@@ -153,13 +153,13 @@ Configuration reference
   * virtual_disk_dir - Required - Disk dir.
   * virtual_disk_name - Optional - Virtual Disk Name. A random virtual disk name will be generated if nil.
   * virtual_disk_size - Optional - Virtual Disk size in GB. Default 1GB.
-  * virtual_disk_type - Optional - Virtual Disk type.  (thin, thick or eagerzeroedthick) Default 'thin'.
+  * virtual_disk_type - Optional - Virtual Disk type.  (thin, zeroedthick or eagerzeroedthick) Default 'thin'.
 
 
 * resource "esxi_guest"
   * guest_name - Required - The Guest name.
   * ip_address - Computed - The IP address reported by VMware tools.
-  * boot_disk_type - Optional - Guest boot disk type. Default 'thin'.  Available thin, thick, eagerzeroedthick.
+  * boot_disk_type - Optional - Guest boot disk type. Default 'thin'.  Available thin, zeroedthick, eagerzeroedthick.
   * boot_disk_size - Optional - Specify boot disk size or grow cloned vm to this size.
   * guestos - Optional - Default will be taken from cloned source.
   * clone_from_vm - Source vm to clone. Mutually exclusive with ovf_source option.     
@@ -188,7 +188,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
-* 1.0.2 Switch authentication method to Keyboard Interactive.
+* 1.0.2 Switch authentication method to Keyboard Interactive.  Read disk_type (thin, thick, etc)
 * 1.0.1 Validate DiskStores and refresh
 * 1.0.0 First Major release
 * 0.1.2 Add ability to manage existing Guest VMs.  A lot of code cleanup, various fixes, more validation.

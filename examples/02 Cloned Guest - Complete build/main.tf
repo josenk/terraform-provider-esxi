@@ -17,12 +17,12 @@ provider "esxi" {
 #########################################
 #
 #  This Guest VM is a clone of an existing Guest VM named "centos7" (must exist and
-#  be powered off), located in the "Templates" resource pool.  vmtest1 will be powered
+#  be powered off), located in the "Templates" resource pool.  vmtest02 will be powered
 #  on by default by terraform.  The virtual network "VM Network", must already exist on
 #  your esxi host!
 #
-resource "esxi_guest" "vmtest1" {
-  guest_name         = "vmtest1"
+resource "esxi_guest" "vmtest02" {
+  guest_name         = "vmtest02"
   disk_store         = "DS_001"
   guestos            = "centos-64"
 

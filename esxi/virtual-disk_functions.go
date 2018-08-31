@@ -175,10 +175,28 @@ func virtualDiskREAD(c *Config, virtdisk_id string) (string, string, string, int
 	flatSizei64, _ = strconv.ParseInt(flatSize, 10, 64)
 	virtual_disk_size = int(flatSizei64 / 1024 / 1024 / 1024)
 
-	// Determine virtual disk type
-	virtual_disk_type = "Unknown"  // todo
+	// Determine virtual disk type  (only works if Guest is powered off)
+	remote_cmd = fmt.Sprintf("vmkfstools -t0 %s |grep -q 'VMFS Z- LVID:' && echo true", virtdisk_id)
+	isZeroedThick, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get disk type.  Is zeroedthick.")
+
+	remote_cmd = fmt.Sprintf("vmkfstools -t0 %s |grep -q 'VMFS -- LVID:' && echo true", virtdisk_id)
+	isEagerZeroedThick, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get disk type.  Is eagerzeroedthick.")
+
+	remote_cmd = fmt.Sprintf("vmkfstools -t0 %s |grep -q 'NOMP -- :' && echo true", virtdisk_id)
+	isThin, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get disk type.  Is thin.")
+
+
+	if isThin == "true" {
+		virtual_disk_type = "thin"
+	} else if isZeroedThick == "true" {
+		virtual_disk_type = "zeroedthick"
+	} else if isEagerZeroedThick == "true" {
+		virtual_disk_type = "eagerzeroedthick"
+	} else {
+		virtual_disk_type = "Unknown"
+	}
+
 
   // Return results
-
   return virtual_disk_disk_store, virtual_disk_dir, virtual_disk_name, virtual_disk_size, virtual_disk_type, err
 }

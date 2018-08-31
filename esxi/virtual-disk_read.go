@@ -19,7 +19,6 @@ func resourceVIRTUALDISKRead(d *schema.ResourceData, m interface{}) error {
   d.Set("virtual_disk_dir", virtual_disk_dir)
   d.Set("virtual_disk_name", virtual_disk_name)
   d.Set("virtual_disk_size", virtual_disk_size)
-
   if virtual_disk_type != "Unknown" {
     d.Set("virtual_disk_type", virtual_disk_type)
   }

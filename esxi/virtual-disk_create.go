@@ -47,7 +47,7 @@ func resourceVIRTUALDISKCreate(d *schema.ResourceData, m interface{}) error {
   } else {
     log.Println("[resourceVIRTUALDISKCreate] Error: " + err.Error())
     d.SetId("")
-		return fmt.Errorf("Failed to create virtual Disk :%s\n", virtual_disk_name)
+		return fmt.Errorf("Failed to create virtual Disk :%s\nError:%s", virtual_disk_name, err.Error())
   }
 
   return nil

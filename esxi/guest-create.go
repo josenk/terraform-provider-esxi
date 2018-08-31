@@ -180,6 +180,9 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 	} else {
 	  //  Build VM by ovftool
+		if boot_disk_type == "zeroedthick" {
+			boot_disk_type = "thick"
+		}
 	  dst_path := fmt.Sprintf("vi://%s:%s@%s/%s", c.esxiUserName, c.esxiPassword, c.esxiHostName, resource_pool_name)
 
 	  ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false " +

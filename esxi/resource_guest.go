@@ -56,7 +56,7 @@ func resourceGUEST() *schema.Resource {
           Optional: true,
           ForceNew: true,
           DefaultFunc: schema.EnvDefaultFunc("boot_disk_type", nil),
-          Description: "Guest boot disk type. thin, thick, eagerzeroedthick",
+          Description: "Guest boot disk type. thin, zeroedthick, eagerzeroedthick",
       },
       "boot_disk_size": &schema.Schema{
           Type:     schema.TypeString,
@@ -108,7 +108,7 @@ func resourceGUEST() *schema.Resource {
 						"mac_address": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
-							ForceNew: true,
+							ForceNew: false,
               Computed: true,
 						},
 						"nic_type": &schema.Schema{
@@ -228,8 +228,8 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
   if boot_disk_type == "" {
     boot_disk_type = "thin"
   }
-  if boot_disk_type != "thin" && boot_disk_type != "thick" && boot_disk_type != "eagerzeroedthick" {
-    return errors.New("Error: boot_disk_type must be thin, thick or eagerzeroedthick")
+  if boot_disk_type != "thin" && boot_disk_type != "zeroedthick" && boot_disk_type != "eagerzeroedthick" {
+    return errors.New("Error: boot_disk_type must be thin, zeroedthick or eagerzeroedthick")
   }
 
   //  Validate boot_disk_size.
@@ -308,7 +308,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
   d.Set("power", "on")
 
   // Refresh
-  guest_name, disk_store, disk_size, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
+  guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
   if err != nil {
     d.SetId("")
     return nil
@@ -317,6 +317,9 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
   d.Set("guest_name",guest_name)
   d.Set("disk_store",disk_store)
   d.Set("disk_size",disk_size)
+  if boot_disk_type != "Unknown" {
+    d.Set("boot_disk_type",boot_disk_type)
+  }
   d.Set("resource_pool_name",resource_pool_name)
   d.Set("memsize",memsize)
   d.Set("numvcpus",numvcpus)
