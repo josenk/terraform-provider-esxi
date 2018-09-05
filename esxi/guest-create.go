@@ -38,11 +38,8 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	//  Check if guest already exists
 	//
-	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/getallvms 2>/dev/null | sort -n | " +
-		"grep \"[0-9] * %s .*%s\" | awk '{print $1}' | " +
-		"tail -1", guest_name, guest_name)
-
-  vmid, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get vmid")
+	// get VMID (by name)
+	vmid, err = guestGetVMID(c, guest_name)
 
   if vmid != "" {
 		  // We don't need to create the VM.   It already exists.
@@ -201,15 +198,10 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
   }
 
-  remote_cmd = fmt.Sprintf("vim-cmd vmsvc/getallvms 2>/dev/null | sort -n | " +
-		"grep \"[0-9] * %s .*%s\" | awk '{print $1}' | " +
-		"tail -1", guest_name, guest_name)
-
-  vmid, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get vmid")
-	log.Printf("[guestCREATE] get_vmid_cmd: %s\n", vmid)
+  // get VMID (by name)
+	vmid, err = guestGetVMID(c, guest_name)
 	if err != nil {
-		log.Printf("Failed get vmid: %s\n", err)
-		return "", fmt.Errorf("Failed get vmid: %s\n", err)
+		return "", err
 	}
 
 	//

@@ -12,12 +12,13 @@ import (
 
 func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
   c := m.(*Config)
+	log.Println("[resourceGUESTRead]" )
 
   guest_startup_timeout  := d.Get("guest_startup_timeout").(int)
 
   var power string
 
-  guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
+  guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, virtual_disks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
   if err != nil || guest_name == "" {
     d.SetId("")
     return nil
@@ -50,21 +51,36 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 		  nics = append(nics, out)
     }
 	}
-
   d.Set("network_interfaces", nics)
+
+	// Do virtual disks
+  log.Printf("virtual_disks: %q\n", virtual_disks)
+  vdisks := make([]map[string]interface{}, 0, 1)
+
+	for vdisk := 0; vdisk < 3; vdisk++ {
+    if virtual_disks[vdisk][0] != "" {
+		  out := make(map[string]interface{})
+		  out["virtual_disk_id"] = virtual_disks[vdisk][0]
+      out["slot"]     = virtual_disks[vdisk][1]
+		  vdisks = append(vdisks, out)
+    }
+	}
+  d.Set("virtual_disks", vdisks)
 
   return nil
 }
 
 
-func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [4][3]string, string, error) {
+func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [4][3]string, [60][2]string, string, error) {
   esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	log.Println("[guestREAD]" )
 
   var guest_name, disk_store, virtual_disk_type, resource_pool_name, guestos, ip_address string
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents, power string
-	var disk_size int
+	var disk_size, vdiskindex int
 	var memsize, numvcpus, virthwver string
 	var virtual_networks [4][3]string
+	var virtual_disks [60][2]string
 
 	r,_ := regexp.Compile("")
 
@@ -72,7 +88,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
   stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get Guest summary")
 
 	if strings.Contains(stdout, "Unable to find a VM corresponding") {
-		return "", "", "", "", "", "", "", "", "", "", virtual_networks, "", nil
+		return "", "", "", "", "", "", "", "", "", "", virtual_networks, virtual_disks, "", nil
 	}
 
   scanner := bufio.NewScanner(strings.NewReader(stdout))
@@ -116,8 +132,8 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 
 	dst_vmx_file = "/vmfs/volumes/" + dst_vmx_ds + "/" + dst_vmx
 
-	log.Printf("[resourceGUESTRead] dst_vmx_file: %s\n", dst_vmx_file)
-	log.Printf("[resourceGUESTRead] disk_store: %s  dst_vmx_ds:%s\n", disk_store, dst_vmx_file)
+	log.Printf("[guestREAD] dst_vmx_file: %s\n", dst_vmx_file)
+	log.Printf("[guestREAD] disk_store: %s  dst_vmx_ds:%s\n", disk_store, dst_vmx_file)
 
   remote_cmd = fmt.Sprintf("cat \"%s\"", dst_vmx_file)
 	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
@@ -126,6 +142,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
   var isGeneratedMAC [3]bool
 
 	//  Read vmx_contents line-by-line to get current settings.
+	vdiskindex = 0
 	scanner = bufio.NewScanner(strings.NewReader(vmx_contents))
   for scanner.Scan() {
 
@@ -135,26 +152,44 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
       stdout = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
 			memsize = nr.Replace(stdout)
-			log.Printf("[resourceGUESTRead] memsize found: %s\n", memsize)
+			log.Printf("[guestREAD] memsize found: %s\n", memsize)
 
     case strings.Contains(scanner.Text(),"numvcpus = "):
       r,_ = regexp.Compile(`\".*\"`)
       stdout = r.FindString(scanner.Text())
 			nr = strings.NewReplacer(`"`,"", `"`,"")
 			numvcpus = nr.Replace(stdout)
-			log.Printf("[resourceGUESTRead] numvcpus found: %s\n", numvcpus)
+			log.Printf("[guestREAD] numvcpus found: %s\n", numvcpus)
 
 		case strings.Contains(scanner.Text(),"virtualHW.version = "):
       r,_ = regexp.Compile(`\".*\"`)
       stdout = r.FindString(scanner.Text())
 			virthwver = strings.Replace(stdout,`"`,"",-1)
-			log.Printf("[resourceGUESTRead] virthwver found: %s\n", virthwver)
+			log.Printf("[guestREAD] virthwver found: %s\n", virthwver)
 
 		case strings.Contains(scanner.Text(),"guestOS = "):
       r,_ = regexp.Compile(`\".*\"`)
       stdout = r.FindString(scanner.Text())
 			guestos = strings.Replace(stdout,`"`,"",-1)
-			log.Printf("[resourceGUESTRead] guestos found: %s\n", guestos)
+			log.Printf("[guestREAD] guestos found: %s\n", guestos)
+
+    case strings.Contains(scanner.Text(),"scsi"):
+			re := regexp.MustCompile("scsi([0-3]):([0-9]{1,2}).(.*) = \"(.*)\"")
+			results := re.FindStringSubmatch(scanner.Text())
+			if len(results) > 4 {
+			  log.Printf("[guestREAD] %s : %s . %s = %s\n", results[1], results[2], results[3], results[4])
+
+				if (results[1] == "0") && (results[2] == "0") {
+					// Skip boot disk
+				} else {
+					if strings.Contains(results[3],"fileName") == true {
+						log.Printf("[guestREAD] %s : %s\n", results[0], results[4])
+						virtual_disks[vdiskindex][0] = results[4]
+						virtual_disks[vdiskindex][1] = fmt.Sprintf("%s:%s", results[1], results[2])
+						vdiskindex += 1
+					}
+				}
+			}
 
 		case strings.Contains(scanner.Text(),"ethernet"):
 			re := regexp.MustCompile("ethernet(.).(.*) = \"(.*)\"")
@@ -164,7 +199,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 			switch results[2] {
 		  case "networkName":
 				virtual_networks[index][0] = results[3]
-				log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
+				log.Printf("[guestREAD] %s : %s\n", results[0], results[3])
 
 			case "addressType":
 				if results[3] == "generated" {
@@ -174,7 +209,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 			case "generatedAddress":
 				if isGeneratedMAC[index] == true {
 					virtual_networks[index][1] = results[3]
-					log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
+					log.Printf("[guestREAD] %s : %s\n", results[0], results[3])
 				}
 
 			case "address":
@@ -185,9 +220,10 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 
 			case "virtualDev":
 					virtual_networks[index][2] = results[3]
-					log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
+					log.Printf("[guestREAD] %s : %s\n", results[0], results[3])
 			}
     }
+
   }
 
 	//  Get power state
@@ -199,7 +235,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	//
 	if power == "on"  {
 		ip_address = guestGetIpAddress(c, vmid, guest_startup_timeout)
-		log.Printf("guestREAD: guestGetIpAddress: %s\n", ip_address)
+		log.Printf("[guestREAD] guestGetIpAddress: %s\n", ip_address)
 	} else {
 		ip_address = ""
 	}
@@ -210,5 +246,5 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	str_disk_size := strconv.Itoa(disk_size)
 
   // return results
-  return guest_name, disk_store, str_disk_size, virtual_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err
+  return guest_name, disk_store, str_disk_size, virtual_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, virtual_disks, power, err
 }
