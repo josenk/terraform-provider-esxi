@@ -10,6 +10,9 @@ func resourceRESOURCEPOOL() *schema.Resource {
     Read:   resourceRESOURCEPOOLRead,
     Update: resourceRESOURCEPOOLUpdate,
     Delete: resourceRESOURCEPOOLDelete,
+    Importer: &schema.ResourceImporter{
+			State: resourceRESOURCEPOOLImport,
+    },
     Schema: map[string]*schema.Schema{
       "resource_pool_name": &schema.Schema{
           Type:     schema.TypeString,

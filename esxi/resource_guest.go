@@ -15,6 +15,9 @@ func resourceGUEST() *schema.Resource {
     Read:   resourceGUESTRead,
     Update: resourceGUESTUpdate,
     Delete: resourceGUESTDelete,
+    Importer: &schema.ResourceImporter{
+			State: resourceGUESTImport,
+    },
     Schema: map[string]*schema.Schema{
       "clone_from_vm": &schema.Schema{
           Type:     schema.TypeString,
@@ -308,7 +311,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
   d.Set("power", "on")
 
   // Refresh
-  guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
+  guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, virtual_disks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
   if err != nil {
     d.SetId("")
     return nil
@@ -341,8 +344,21 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
       nics = append(nics, out)
     }
   }
-
   d.Set("network_interfaces", nics)
+
+  // Do virtual disks
+  log.Printf("virtual_disks: %q\n", virtual_disks)
+  vdisks := make([]map[string]interface{}, 0, 1)
+
+  for vdisk := 0; vdisk < 3; vdisk++ {
+    if virtual_disks[vdisk][0] != "" {
+      out := make(map[string]interface{})
+      out["virtual_disk_id"] = virtual_disks[vdisk][0]
+      out["slot"]            = virtual_disks[vdisk][1]
+      vdisks = append(vdisks, out)
+    }
+  }
+  d.Set("virtual_disks", vdisks)
 
   return nil
 }

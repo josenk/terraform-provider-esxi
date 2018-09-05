@@ -10,6 +10,9 @@ func resourceVIRTUALDISK() *schema.Resource {
     Read:   resourceVIRTUALDISKRead,
     Update: resourceVIRTUALDISKUpdate,
     Delete: resourceVIRTUALDISKDelete,
+    Importer: &schema.ResourceImporter{
+			State: resourceVIRTUALDISKImport,
+    },
     Schema: map[string]*schema.Schema{
       "virtual_disk_disk_store": &schema.Schema{
           Type:     schema.TypeString,

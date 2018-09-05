@@ -10,7 +10,7 @@ Requirements
 ------------
 -   [Terraform](https://www.terraform.io/downloads.html) 0.10.1+
 -   [Go](https://golang.org/doc/install) 1.9 (to build the provider plugin)
--   [ovftool](https://www.vmware.com/support/developer/ovf/) from VMware.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You can manually set your path, or install ovftool in the \HashiCorp\Vagrant\bin directory.
+-   [ovftool](https://www.vmware.com/support/developer/ovf/) from VMware.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You will need to manually set your path.
 -   You MUST enable ssh access on your ESXi hypervisor.
   * Google 'How to enable ssh access on esxi'
 -   In general, you should know how to use terraform, esxi and some networking...
@@ -42,20 +42,21 @@ cp terraform-provider-esxi_`cat version` /usr/local/bin
 
 Terraform-provider-esxi plugin
 ==============================
-This is a Terraform plugin that adds a VMware ESXi provider support.  This allows Terraform to control and provision VMs directly on an ESXi hypervisor without a need for vCenter or VShpere.   ESXi hypervisor is a free download from VMware!
+* This is a Terraform plugin that adds a VMware ESXi provider support.  This allows Terraform to control and provision VMs directly on an ESXi hypervisor without a need for vCenter or VShpere.   ESXi hypervisor is a free download from VMware!
 >https://www.vmware.com/go/get-free-esxi
-
-
-What's New:
------------
-* Terraform can read existing Guest VMs & Resource pools by name. (infra to code)
-
 
 * If you don't know terraform, I highly recommend you read through the introduction on the hashicorp website.
 >https://www.terraform.io/intro/getting-started/install.html
 
 * VMware Configuration Maximums tool.
 >https://configmax.vmware.com/guest
+
+
+What's New:
+-----------
+* Terraform can import existing Guest VMs, Virtual Disks & Resource pools by name. See wiki page for more info.
+>https://github.com/josenk/terraform-provider-esxi/wiki/How-to-import
+
 
 
 Features and Compatibility
@@ -70,7 +71,7 @@ Features and Compatibility
 Requirements
 ------------
 1. This is a Terraform plugin, so you need Terraform installed...  :-)
-2. This plugin requires ovftool from VMware.  Download from VMware website.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You can manually set your path, or install ovftool in the \HashiCorp\Vagrant\bin directory.
+2. This plugin requires ovftool from VMware.  Download from VMware website.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You will need to manually set your path.
 >https://www.vmware.com/support/developer/ovf/
 3. You MUST enable ssh access on your ESXi hypervisor.
   * Google 'How to enable ssh access on esxi'
@@ -85,7 +86,7 @@ Not everyone has vCenter, vSphere, expensive APIs...  These cost $$$.  ESXi is f
 How to install
 --------------
 Download and install Terraform on your local system using instructions from https://www.terraform.io/downloads.html.
-Download this plugin from github and place a copy of it in your path or current directory of your terraform project.
+Clone this plugin from github, build and place a copy of it in your path or current directory of your terraform project.
 
 
 How to use and configure a main.tf file
@@ -183,11 +184,15 @@ Configuration reference
 
 Known issues with vmware_esxi
 -----------------------------
-* More features coming.
+* terraform import cannot import the guest disk type (thick, thin, etc) if the VM is powered on and cannot import the guest ip_address if it's powered off.
+* It doesn't configure additional scsi controllers yet.
+* Only numvcpus are supported.   numcores is not supported.
+* Doesn't support CDrom or floppy.
 
 
 Version History
 ---------------
+* 1.1.0 Add Import support.
 * 1.0.2 Switch authentication method to Keyboard Interactive.  Read disk_type (thin, thick, etc)
 * 1.0.1 Validate DiskStores and refresh
 * 1.0.0 First Major release

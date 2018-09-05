@@ -44,9 +44,9 @@ func Provider() terraform.ResourceProvider {
       },
     },
     ResourcesMap: map[string]*schema.Resource{
-      "esxi_guest": resourceGUEST(),
+      "esxi_guest":         resourceGUEST(),
       "esxi_resource_pool": resourceRESOURCEPOOL(),
-      "esxi_virtual_disk": resourceVIRTUALDISK(),
+      "esxi_virtual_disk":  resourceVIRTUALDISK(),
     },
     ConfigureFunc: configureProvider,
   }

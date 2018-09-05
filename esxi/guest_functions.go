@@ -10,6 +10,48 @@ import (
 	"time"
 )
 
+func guestGetVMID(c *Config, guest_name string) (string, error) {
+	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	log.Printf("[guestGetVMID]\n")
+
+	var remote_cmd, vmid string
+	var err error
+
+  remote_cmd = fmt.Sprintf("vim-cmd vmsvc/getallvms 2>/dev/null | sort -n | " +
+  	"grep \"[0-9] * %s .*%s\" | awk '{print $1}' | " +
+  	"tail -1", guest_name, guest_name)
+
+  vmid, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get vmid")
+  log.Printf("[guestGetVMID] result: %s\n", vmid)
+  if err != nil {
+  	log.Printf("[guestGetVMID] Failed get vmid: %s\n", err)
+  	return "", fmt.Errorf("Failed get vmid: %s\n", err)
+  }
+
+	return vmid, nil
+}
+
+func guestValidateVMID(c *Config, vmid string) (string, error) {
+	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	log.Printf("[guestValidateVMID]\n")
+
+	var remote_cmd string
+	var err error
+
+	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/getallvms 2>/dev/null | awk '{print $1}' | " +
+  	"grep '^%s$'", vmid)
+
+  vmid, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate vmid exists")
+  log.Printf("[guestValidateVMID] result: %s\n", vmid)
+  if err != nil {
+  	log.Printf("[guestValidateVMID] Failed get vmid: %s\n", err)
+  	return "", fmt.Errorf("Failed get vmid: %s\n", err)
+  }
+
+	return vmid, nil
+}
+
+
 func getBootDiskPath(c *Config, vmid string) (string, error) {
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
   log.Printf("[getBootDiskPath]\n")
