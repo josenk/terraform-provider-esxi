@@ -2,19 +2,19 @@ package esxi
 
 import (
 	"fmt"
-	"log"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 )
 
 func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
-  c := m.(*Config)
+	c := m.(*Config)
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 
 	var remote_cmd, stdout string
 	var err error
 
 	vmid := d.Id()
-  guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
+	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 
 	_, err = guestPowerOff(c, vmid, guest_shutdown_timeout)
 	if err != nil {
@@ -35,6 +35,6 @@ func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-  d.SetId("")
-  return nil
+	d.SetId("")
+	return nil
 }

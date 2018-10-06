@@ -14,7 +14,7 @@ type Config struct {
 
 func (c *Config) validateEsxiCreds() error {
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
-  log.Printf("[validateEsxiCreds]\n")
+	log.Printf("[validateEsxiCreds]\n")
 
 	var remote_cmd string
 	var err error
@@ -24,5 +24,5 @@ func (c *Config) validateEsxiCreds() error {
 	if err != nil {
 		return fmt.Errorf("Failed to connect to esxi host: %s\n", err)
 	}
-  return nil
+	return nil
 }
