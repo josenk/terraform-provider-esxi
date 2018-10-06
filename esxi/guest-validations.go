@@ -14,35 +14,33 @@ func validateVirtualDiskSlot(slot string) string {
 	var result string
 
 	// Split on comma.
-  fields := strings.Split(slot + ":UnSet", ":")
+	fields := strings.Split(slot+":UnSet", ":")
 
-  // if using simple format
-  if fields[1] == "UnSet" {
-    fields[1] = fields[0]
-    fields[0] = "0"
-  }
+	// if using simple format
+	if fields[1] == "UnSet" {
+		fields[1] = fields[0]
+		fields[0] = "0"
+	}
 
-  field0i, _ := strconv.Atoi(fields[0])
-  field1i, _ := strconv.Atoi(fields[1])
-  result = "ok"
+	field0i, _ := strconv.Atoi(fields[0])
+	field1i, _ := strconv.Atoi(fields[1])
+	result = "ok"
 
-  if field0i < 0 || field0i > 3 {
-    result = "scsi controller id out of range"
-  }
-  if field1i < 0 || field1i > 15 {
-    result = "scsi id out of range"
-  }
-  if field0i == 0 && field1i == 0 {
-    result = "scsi id used by boot disk"
-  }
-  if field1i == 7 {
-    result = "scsi id 7 not allowed"
-  }
+	if field0i < 0 || field0i > 3 {
+		result = "scsi controller id out of range"
+	}
+	if field1i < 0 || field1i > 15 {
+		result = "scsi id out of range"
+	}
+	if field0i == 0 && field1i == 0 {
+		result = "scsi id used by boot disk"
+	}
+	if field1i == 7 {
+		result = "scsi id 7 not allowed"
+	}
 
-  return result
+	return result
 }
-
-
 
 func validateNICType(nictype string) bool {
 	log.Printf("[validateNICType]\n")
@@ -70,8 +68,6 @@ func validateNICType(nictype string) bool {
 //  return ""
 //}
 
-
-
 func validateGuestOsType(guestos string) bool {
 	log.Printf("[validateGuestOsType]\n")
 
@@ -79,7 +75,7 @@ func validateGuestOsType(guestos string) bool {
 		return true
 	}
 
-  //  All valid Guest OS's
+	//  All valid Guest OS's
 	allGuestOSs := `
 	  asianux3-64
     asianux3
@@ -231,6 +227,6 @@ func validateGuestOsType(guestos string) bool {
     winxppro
 		`
 
-  guestos = fmt.Sprintf(" %s\n", guestos)
+	guestos = fmt.Sprintf(" %s\n", guestos)
 	return strings.Contains(allGuestOSs, guestos)
 }

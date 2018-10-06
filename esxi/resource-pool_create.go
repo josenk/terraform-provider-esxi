@@ -2,46 +2,46 @@ package esxi
 
 import (
 	"fmt"
-	"log"
-  "strconv"
-  "strings"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
+	"strconv"
+	"strings"
 )
 
 func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
-  c := m.(*Config)
+	c := m.(*Config)
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
-	log.Println("[resourceRESOURCEPOOLCreate]" )
+	log.Println("[resourceRESOURCEPOOLCreate]")
 
 	var remote_cmd string
-  var pool_id, parent_pool string
+	var pool_id, parent_pool string
 	var err error
 
-  resource_pool_name := d.Get("resource_pool_name").(string)
-  cpu_min            := d.Get("cpu_min").(int)
-  cpu_min_expandable := d.Get("cpu_min_expandable").(string)
-  cpu_max            := d.Get("cpu_max").(int)
-  cpu_shares         := strings.ToLower(d.Get("cpu_shares").(string))
-  mem_min            := d.Get("mem_min").(int)
-  mem_min_expandable := d.Get("mem_min_expandable").(string)
-  mem_max            := d.Get("mem_max").(int)
-  mem_shares         := strings.ToLower(d.Get("mem_shares").(string))
-	parent_pool         = "Resources"
+	resource_pool_name := d.Get("resource_pool_name").(string)
+	cpu_min := d.Get("cpu_min").(int)
+	cpu_min_expandable := d.Get("cpu_min_expandable").(string)
+	cpu_max := d.Get("cpu_max").(int)
+	cpu_shares := strings.ToLower(d.Get("cpu_shares").(string))
+	mem_min := d.Get("mem_min").(int)
+	mem_min_expandable := d.Get("mem_min_expandable").(string)
+	mem_max := d.Get("mem_max").(int)
+	mem_shares := strings.ToLower(d.Get("mem_shares").(string))
+	parent_pool = "Resources"
 
-  if resource_pool_name == string('/') {
-    return fmt.Errorf("Missing required resource_pool_name")
-  }
+	if resource_pool_name == string('/') {
+		return fmt.Errorf("Missing required resource_pool_name")
+	}
 
-  if resource_pool_name[0] == '/' {
-    return fmt.Errorf("Resource Pool Name cannot start with /")
-  }
-  i := strings.LastIndex(resource_pool_name, "/")
-  if i > 2 {
-    parent_pool = resource_pool_name[:i]
-    resource_pool_name = resource_pool_name[i+1:]
-  }
+	if resource_pool_name[0] == '/' {
+		return fmt.Errorf("Resource Pool Name cannot start with /")
+	}
+	i := strings.LastIndex(resource_pool_name, "/")
+	if i > 2 {
+		parent_pool = resource_pool_name[:i]
+		resource_pool_name = resource_pool_name[i+1:]
+	}
 
-  //  Check if already exists
+	//  Check if already exists
 	stdout, _ := getPoolID(c, resource_pool_name)
 	if stdout != "" {
 		d.SetId(stdout)
@@ -64,7 +64,7 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	cpu_shares_opt := "--cpu-shares=normal"
-	if cpu_shares == "low" ||  cpu_shares == "high" {
+	if cpu_shares == "low" || cpu_shares == "high" {
 		cpu_shares_opt = fmt.Sprintf("--cpu-shares=%s", cpu_shares)
 	} else {
 		tmp_var, err := strconv.Atoi(cpu_shares)
@@ -89,7 +89,7 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	mem_shares_opt := "--mem-shares=normal"
-	if mem_shares == "low" ||  mem_shares == "high" {
+	if mem_shares == "low" || mem_shares == "high" {
 		mem_shares_opt = fmt.Sprintf("--mem-shares=%s", mem_shares)
 	} else {
 		tmp_var, err := strconv.Atoi(mem_shares)
@@ -105,17 +105,17 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	remote_cmd = fmt.Sprintf("vim-cmd hostsvc/rsrc/create %s %s %s %s %s %s %s %s %s %s",
-		cpu_min_opt,cpu_min_expandable_opt, cpu_max_opt, cpu_shares_opt,
-		mem_min_opt,mem_min_expandable_opt, mem_max_opt, mem_shares_opt, parent_pool_id, resource_pool_name)
+		cpu_min_opt, cpu_min_expandable_opt, cpu_max_opt, cpu_shares_opt,
+		mem_min_opt, mem_min_expandable_opt, mem_max_opt, mem_shares_opt, parent_pool_id, resource_pool_name)
 
 	_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create resource pool")
-	pool_id, _  = getPoolID(c, resource_pool_name)
+	pool_id, _ = getPoolID(c, resource_pool_name)
 	if err != nil {
 		d.SetId("")
 		return err
 	}
 
-  //  Set pool_id
+	//  Set pool_id
 	d.SetId(pool_id)
 
 	// Refresh
