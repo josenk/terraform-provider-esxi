@@ -24,9 +24,9 @@ func diskStoreValidate(c *Config, disk_store string) error {
 	remote_cmd = fmt.Sprintf("esxcli storage filesystem list | grep '/vmfs/volumes/.*[VMFS|NFS]' | awk '{print $2}'")
 	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get list of disk stores")
 	if err != nil {
-		return fmt.Errorf("Unable to get list of disk stores :%s\n", err)
+		return fmt.Errorf("Unable to get list of disk stores: %s\n", err)
 	}
-	log.Printf("1: Available Disk Stores :%s\n", strings.Replace(stdout, "\n", " ", -1))
+	log.Printf("1: Available Disk Stores: %s\n", strings.Replace(stdout, "\n", " ", -1))
 
 	if strings.Contains(stdout, disk_store) == false {
 		remote_cmd = fmt.Sprintf("esxcli storage filesystem rescan")
@@ -35,12 +35,12 @@ func diskStoreValidate(c *Config, disk_store string) error {
 		remote_cmd = fmt.Sprintf("esxcli storage filesystem list | grep '/vmfs/volumes/.*[VMFS|NFS]' | awk '{print $2}'")
 		stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get list of disk stores")
 		if err != nil {
-			return fmt.Errorf("Unable to get list of disk stores :%s\n", err)
+			return fmt.Errorf("Unable to get list of disk stores: %s\n", err)
 		}
-		log.Printf("2: Available Disk Stores :%s\n", strings.Replace(stdout, "\n", " ", -1))
+		log.Printf("2: Available Disk Stores: %s\n", strings.Replace(stdout, "\n", " ", -1))
 
 		if strings.Contains(stdout, disk_store) == false {
-			return fmt.Errorf("Disk Store %s does not exist.\nAvailable Disk Stores :%s\n", disk_store, stdout)
+			return fmt.Errorf("Disk Store %s does not exist.\nAvailable Disk Stores: %s\n", disk_store, stdout)
 		}
 	}
 	return nil

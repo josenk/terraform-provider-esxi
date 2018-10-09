@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 func guestCREATE(c *Config, guest_name string, disk_store string,
@@ -171,13 +173,27 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 	} else {
 		//  Build VM by ovftool
+
+		//  Check if source file exist.
+		if !strings.HasPrefix(src_path, "vi://") {
+			if _, err := os.Stat(src_path); os.IsNotExist(err) {
+				return "", fmt.Errorf("File not found: %s\n", src_path)
+			}
+		}
+
+		//  Set params for ovftool
 		if boot_disk_type == "zeroedthick" {
 			boot_disk_type = "thick"
 		}
 		dst_path := fmt.Sprintf("vi://%s:%s@%s/%s", c.esxiUserName, c.esxiPassword, c.esxiHostName, resource_pool_name)
 
+		net_param := ""
+		if (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) && virtual_networks[0][0] != "" {
+			net_param = " --network=\"" + virtual_networks[0][0] + "\""
+		}
+
 		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false "+
-			"-dm=%s --name='%s' --overwrite -ds='%s' '%s' '%s'", boot_disk_type, guest_name, disk_store, src_path, dst_path)
+			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'", boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
 		cmd := exec.Command("/bin/bash", "-c", ovf_cmd)
 
 		log.Println("[guestCREATE] ovf_cmd: " + ovf_cmd)
@@ -186,8 +202,8 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		err = cmd.Run()
 		log.Printf("[guestCREATE] ovftool output: %q\n", out.String())
 		if err != nil {
-			log.Printf("Failed, There was an ovftool Error:%s\n", err.Error())
-			return "", fmt.Errorf("There was an ovftool Error:%s\n", err.Error())
+			log.Printf("Failed, There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
+			return "", fmt.Errorf("There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
 		}
 
 	}
