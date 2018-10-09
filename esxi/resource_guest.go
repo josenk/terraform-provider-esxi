@@ -198,6 +198,9 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 	guest_startup_timeout := d.Get("guest_startup_timeout").(int)
 
+	saved_boot_disk_type := boot_disk_type
+	saved_numvcpus := numvcpus
+
 	// Validations
 	if resource_pool_name == "ha-root-pool" {
 		resource_pool_name = "/"
@@ -318,12 +321,20 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	d.Set("guest_name", guest_name)
 	d.Set("disk_store", disk_store)
 	d.Set("disk_size", disk_size)
-	if boot_disk_type != "Unknown" {
+	if boot_disk_type == "Unknown" || boot_disk_type == "" {
+		if saved_boot_disk_type != "" {
+			d.Set("boot_disk_type", saved_boot_disk_type)
+		}
+	} else {
 		d.Set("boot_disk_type", boot_disk_type)
 	}
 	d.Set("resource_pool_name", resource_pool_name)
 	d.Set("memsize", memsize)
-	d.Set("numvcpus", numvcpus)
+	if numvcpus != "" {
+		d.Set("numvcpus", numvcpus)
+	} else {
+		d.Set("numvcpus", saved_numvcpus)
+	}
 	d.Set("virthwver", virthwver)
 	d.Set("guestos", guestos)
 	d.Set("ip_address", ip_address)

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/terraform-providers/terraform-provider-esxi/esxi"
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/terraform-providers/terraform-provider-esxi/esxi"
 )
 
 func main() {

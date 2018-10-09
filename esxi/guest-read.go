@@ -27,7 +27,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("guest_name", guest_name)
 	d.Set("disk_store", disk_store)
 	d.Set("disk_size", disk_size)
-	if boot_disk_type != "Unknown" {
+	if boot_disk_type != "Unknown" && boot_disk_type != "" {
 		d.Set("boot_disk_type", boot_disk_type)
 	}
 	d.Set("resource_pool_name", resource_pool_name)
@@ -159,6 +159,13 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 			nr = strings.NewReplacer(`"`, "", `"`, "")
 			numvcpus = nr.Replace(stdout)
 			log.Printf("[guestREAD] numvcpus found: %s\n", numvcpus)
+
+		case strings.Contains(scanner.Text(), "numa.autosize.vcpu."):
+			r, _ = regexp.Compile(`\".*\"`)
+			stdout = r.FindString(scanner.Text())
+			nr = strings.NewReplacer(`"`, "", `"`, "")
+			numvcpus = nr.Replace(stdout)
+			log.Printf("[guestREAD] numa.vcpu (numvcpus) found: %s\n", numvcpus)
 
 		case strings.Contains(scanner.Text(), "virtualHW.version = "):
 			r, _ = regexp.Compile(`\".*\"`)

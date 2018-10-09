@@ -192,6 +192,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.1.1 Fix, unable to provision ova sources.  go fmt.
 * 1.1.0 Add Import support.
 * 1.0.2 Switch authentication method to Keyboard Interactive.  Read disk_type (thin, thick, etc)
 * 1.0.1 Validate DiskStores and refresh
