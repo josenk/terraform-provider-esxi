@@ -1,16 +1,15 @@
 package esxi
 
 import (
-	"log"
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 )
 
-
 func resourceRESOURCEPOOLImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-  c := m.(*Config)
+	c := m.(*Config)
 
-	log.Println("[resourceRESOURCEPOOLImport]" )
+	log.Println("[resourceRESOURCEPOOLImport]")
 
 	var err error
 
@@ -25,5 +24,5 @@ func resourceRESOURCEPOOLImport(d *schema.ResourceData, m interface{}) ([]*schem
 		d.SetId(d.Id())
 	}
 
-  return results, nil
+	return results, nil
 }
