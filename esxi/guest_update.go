@@ -24,6 +24,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	virthwver := d.Get("virthwver").(string)
 	guestos := d.Get("guestos").(string)
 	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
+	notes := d.Get("notes").(string)
 	lanAdaptersCount := d.Get("network_interfaces.#").(int)
 
 	if lanAdaptersCount > 3 {
@@ -78,7 +79,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	imemsize, _ := strconv.Atoi(memsize)
 	inumvcpus, _ := strconv.Atoi(numvcpus)
 	ivirthwver, _ := strconv.Atoi(virthwver)
-	err = updateVmx_contents(c, vmid, false, imemsize, inumvcpus, ivirthwver, guestos, virtual_networks, virtual_disks)
+	err = updateVmx_contents(c, vmid, false, imemsize, inumvcpus, ivirthwver, guestos, virtual_networks, virtual_disks, notes)
 	if err != nil {
 		fmt.Println("Failed to update VMX file.")
 		return errors.New("Failed to update VMX file.")

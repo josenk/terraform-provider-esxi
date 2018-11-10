@@ -104,7 +104,7 @@ func readVmx_contents(c *Config, vmid string) (string, error) {
 }
 
 func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numvcpus int,
-	virthwver int, guestos string, virtual_networks [4][3]string, virtual_disks [60][2]string) error {
+	virthwver int, guestos string, virtual_networks [4][3]string, virtual_disks [60][2]string, notes string) error {
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Printf("[updateVmx_contents]\n")
 
@@ -145,6 +145,19 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 		re := regexp.MustCompile("guestOS = \".*\"")
 		regexReplacement = fmt.Sprintf("guestOS = \"%s\"", guestos)
 		vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+	}
+
+	// modify annotation
+	if notes != "" {
+		notes = strings.Replace(notes, "\"", "|22", -1)
+		if strings.Contains(vmx_contents, "annotation") {
+			re := regexp.MustCompile("annotation = \".*\"")
+			regexReplacement = fmt.Sprintf("annotation = \"%s\"", notes)
+			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+		} else {
+			regexReplacement = fmt.Sprintf("\nannotation = \"%s\"", notes)
+			vmx_contents += regexReplacement
+		}
 	}
 
 	//

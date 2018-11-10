@@ -172,6 +172,13 @@ func resourceGUEST() *schema.Resource {
 					},
 				},
 			},
+			"notes": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    false,
+				Computed:    true,
+				Description: "Guest notes (annotation).",
+			},
 		},
 	}
 }
@@ -197,6 +204,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	guestos := d.Get("guestos").(string)
 	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 	guest_startup_timeout := d.Get("guest_startup_timeout").(int)
+	notes := d.Get("notes").(string)
 
 	saved_boot_disk_type := boot_disk_type
 	saved_numvcpus := numvcpus
@@ -293,7 +301,8 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
-		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks, virtual_disks, guest_shutdown_timeout)
+		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks,
+		virtual_disks, guest_shutdown_timeout, notes)
 	if err != nil {
 		tmpint, _ = strconv.Atoi(vmid)
 		if tmpint > 0 {
@@ -312,7 +321,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	d.Set("power", "on")
 
 	// Refresh
-	guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, virtual_disks, power, err := guestREAD(c, d.Id(), guest_startup_timeout)
+	guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, virtual_disks, power, notes, err := guestREAD(c, d.Id(), guest_startup_timeout)
 	if err != nil {
 		d.SetId("")
 		return nil
@@ -339,6 +348,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	d.Set("guestos", guestos)
 	d.Set("ip_address", ip_address)
 	d.Set("power", power)
+	d.Set("notes", notes)
 
 	// Do network interfaces
 	log.Printf("virtual_networks: %q\n", virtual_networks)

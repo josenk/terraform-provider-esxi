@@ -13,7 +13,7 @@ import (
 func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
 	boot_disk_type string, boot_disk_size string, virtual_networks [4][3]string,
-	virtual_disks [60][2]string, guest_shutdown_timeout int) (string, error) {
+	virtual_disks [60][2]string, guest_shutdown_timeout int, notes string) (string, error) {
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Printf("[guestCREATE]\n")
 
@@ -77,6 +77,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 		hasISO := false
 		isofilename := ""
+		notes = strings.Replace(notes, "\"", "|22", -1)
 
 		if numvcpus == 0 {
 			numvcpus = 1
@@ -102,6 +103,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 				fmt.Sprintf("numvcpus = \\\"%d\\\"\n", numvcpus) +
 				fmt.Sprintf("memSize = \\\"%d\\\"\n", memsize) +
 				fmt.Sprintf("guestOS = \\\"%s\\\"\n", guestos) +
+				fmt.Sprintf("annotation = \\\"%s\\\"\n", notes) +
 				fmt.Sprintf("floppy0.present = \\\"FALSE\\\"\n") +
 				fmt.Sprintf("scsi0.present = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("scsi0.sharedBus = \\\"none\\\"\n") +
@@ -227,7 +229,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	//  make updates to vmx file
 	//
-	err = updateVmx_contents(c, vmid, true, memsize, numvcpus, virthwver, guestos, virtual_networks, virtual_disks)
+	err = updateVmx_contents(c, vmid, true, memsize, numvcpus, virthwver, guestos, virtual_networks, virtual_disks, notes)
 	if err != nil {
 		return vmid, err
 	}
