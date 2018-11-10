@@ -180,7 +180,7 @@ Configuration reference
   * virtual_disks - Optional - Array of additional storage to be added to the guest.
     * virtual_disk_id - Required - virtual_disk.id from esxi_virtual_disk resource.
     * slot - Required - SCSI_Ctrl:SCSI_id.  Range  '0:1' to '0:15'.  SCSI_id 7 is not allowed.
-* notes - Optional - The Guest notes (annotation).
+  * notes - Optional - The Guest notes (annotation).
 
 
 Known issues with vmware_esxi
