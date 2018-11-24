@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
+	"time"
 )
 
 func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
@@ -27,6 +28,7 @@ func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 		log.Printf("[resourceGUESTDelete] Failed clean storage from vmid: %s (to be deleted)\n", vmid)
 	}
 
+	time.Sleep(5 * time.Second)
 	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/destroy %s", vmid)
 	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/destroy")
 	if err != nil {

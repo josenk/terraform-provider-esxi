@@ -5,6 +5,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"log"
 	"strings"
+	"time"
 )
 
 // Connect to esxi host using ssh
@@ -29,18 +30,26 @@ func connectToHost(esxiSSHinfo SshConnectionStruct) (*ssh.Client, *ssh.Session, 
 
 	esxi_hostandport := fmt.Sprintf("%s:%s", esxiSSHinfo.host, esxiSSHinfo.port)
 
-	client, err := ssh.Dial("tcp", esxi_hostandport, sshConfig)
-	if err != nil {
-		return nil, nil, err
-	}
+	attempt := 10
+	for attempt > 0 {
+		client, err := ssh.Dial("tcp", esxi_hostandport, sshConfig)
+		if err != nil {
+			log.Printf("[runRemoteSshCommand] Retry connection: %d\n", attempt)
+			attempt -= 1
+			time.Sleep(1 * time.Second)
+		} else {
 
-	session, err := client.NewSession()
-	if err != nil {
-		client.Close()
-		return nil, nil, err
-	}
+			session, err := client.NewSession()
+			if err != nil {
+				client.Close()
+				return nil, nil, fmt.Errorf("Session Connection Error")
+			}
 
-	return client, session, nil
+			return client, session, nil
+
+		}
+	}
+	return nil, nil, fmt.Errorf("Client Connection Error")
 }
 
 //  Run any remote ssh command on esxi server and return results.

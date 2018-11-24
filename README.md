@@ -193,6 +193,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.2.1 Fix ssh connection retries.
 * 1.2.0 Add support for notes (annotation)
 * 1.1.1 Fix, unable to provision ova sources.  go fmt.
 * 1.1.0 Add Import support.
