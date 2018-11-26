@@ -58,7 +58,7 @@ func resourceGUEST() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: schema.EnvDefaultFunc("boot_disk_type", nil),
+				DefaultFunc: schema.EnvDefaultFunc("boot_disk_type", "thin"),
 				Description: "Guest boot disk type. thin, zeroedthick, eagerzeroedthick",
 			},
 			"boot_disk_size": &schema.Schema{
