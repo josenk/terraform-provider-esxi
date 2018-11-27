@@ -23,7 +23,7 @@ Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provi
 
 ```sh
 
-export GOPATH="/usr/lib"
+export GOPATH="/usr/local/lib"
 go get -u golang.org/x/crypto/ssh
 
 mkdir -p $GOPATH/src/github.com/hashicorp
