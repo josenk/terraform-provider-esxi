@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -19,6 +20,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 	var memsize, numvcpus, virthwver int
 	var boot_disk_vmdkPATH, remote_cmd, vmid, stdout, vmx_contents string
+	var osShellCmd, osShellCmdOpt string
 	var out bytes.Buffer
 	var err error
 	err = nil
@@ -196,7 +198,17 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false "+
 			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'", boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
-		cmd := exec.Command("/bin/bash", "-c", ovf_cmd)
+
+		if runtime.GOOS == "windows" {
+			osShellCmd = "C:\\Windows\\System32\\cmd.exe"
+			osShellCmdOpt = "/c"
+			ovf_cmd = strings.Replace(ovf_cmd, "'", "", -1)
+		} else {
+			osShellCmd = "/bin/bash"
+			osShellCmdOpt = "-c"
+		}
+
+		cmd := exec.Command(osShellCmd, osShellCmdOpt, ovf_cmd)
 
 		log.Println("[guestCREATE] ovf_cmd: " + ovf_cmd)
 

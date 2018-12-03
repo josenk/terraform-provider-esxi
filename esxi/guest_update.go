@@ -26,6 +26,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 	notes := d.Get("notes").(string)
 	lanAdaptersCount := d.Get("network_interfaces.#").(int)
+	power := d.Get("power").(string)
 
 	if lanAdaptersCount > 3 {
 		lanAdaptersCount = 3
@@ -96,10 +97,12 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	//  power on
-	_, err = guestPowerOn(c, vmid)
-	if err != nil {
-		fmt.Println("Failed to power on.")
-		return errors.New("Failed to power on.")
+	if power == "on" {
+		_, err = guestPowerOn(c, vmid)
+		if err != nil {
+			fmt.Println("Failed to power on.")
+			return errors.New("Failed to power on.")
+		}
 	}
 
 	return err
