@@ -205,6 +205,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 	guest_startup_timeout := d.Get("guest_startup_timeout").(int)
 	notes := d.Get("notes").(string)
+	power := d.Get("power").(string)
 
 	saved_boot_disk_type := boot_disk_type
 	saved_numvcpus := numvcpus
@@ -314,11 +315,13 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	//  set vmid
 	d.SetId(vmid)
 
-	_, err = guestPowerOn(c, vmid)
-	if err != nil {
-		return errors.New("Failed to power on.")
+	if power == "on" {
+		_, err = guestPowerOn(c, vmid)
+		if err != nil {
+			return errors.New("Failed to power on.")
+		}
+		d.Set("power", "on")
 	}
-	d.Set("power", "on")
 
 	// Refresh
 	guest_name, disk_store, disk_size, boot_disk_type, resource_pool_name, memsize, numvcpus, virthwver, guestos, ip_address, virtual_networks, virtual_disks, power, notes, err := guestREAD(c, d.Id(), guest_startup_timeout)
