@@ -1,10 +1,9 @@
-package main
+package esxi
 
 import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
