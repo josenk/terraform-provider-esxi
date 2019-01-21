@@ -161,11 +161,59 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	}
 
 	//
-	//  Create/update networks network_interfaces
+	//  add/modify virtual disks
 	//
 	var tmpvar string
 	var vmx_contents_new string
+	var i, j int
 
+	//
+	//  Remove all disks
+	//
+	regexReplacement = fmt.Sprintf("")
+	for i = 0; i < 4; i++ {
+		for j = 0; j < 16; j++ {
+
+			if (i != 0 || j != 0) && j != 7 {
+				re := regexp.MustCompile(fmt.Sprintf("scsi%d:%d.*\n", i, j))
+				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+			}
+		}
+	}
+
+	//
+	//  Add disks that are managed by terraform
+	//
+	for i = 0; i < 59; i++ {
+		if virtual_disks[i][0] != "" {
+
+			log.Printf("[updateVmx_contents] Adding: %s\n", virtual_disks[i][1])
+			tmpvar = fmt.Sprintf("scsi%s.deviceType = \"scsi-hardDisk\"\n", virtual_disks[i][1])
+			if !strings.Contains(vmx_contents, tmpvar) {
+				vmx_contents += "\n" + tmpvar
+			}
+
+			tmpvar = fmt.Sprintf("scsi%s.fileName", virtual_disks[i][1])
+			if strings.Contains(vmx_contents, tmpvar) {
+				re := regexp.MustCompile(tmpvar + " = \".*\"")
+				regexReplacement = fmt.Sprintf(tmpvar+" = \"%s\"", virtual_disks[i][0])
+				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+			} else {
+				regexReplacement = fmt.Sprintf("\n"+tmpvar+" = \"%s\"", virtual_disks[i][0])
+				vmx_contents += "\n" + regexReplacement
+			}
+
+			tmpvar = fmt.Sprintf("scsi%s.present = \"true\"\n", virtual_disks[i][1])
+			if !strings.Contains(vmx_contents, tmpvar) {
+				vmx_contents += "\n" + tmpvar
+			}
+
+		}
+	}
+
+	//
+	//  Create/update networks network_interfaces
+	//
 	if iscreate == true {
 
 		//  This is create network interfaces.  Clean out old network interfaces.
@@ -220,20 +268,6 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 
 				tmpvar = fmt.Sprintf("ethernet%d.present = \"TRUE\"\n", i)
 
-				vmx_contents_new = vmx_contents_new + tmpvar
-			}
-		}
-
-		//  add virtual disks
-		for i := 0; i < 59; i++ {
-			if virtual_disks[i][0] != "" {
-				tmpvar = fmt.Sprintf("scsi%s.deviceType = \"scsi-hardDisk\"\n", virtual_disks[i][1])
-				vmx_contents_new = vmx_contents_new + tmpvar
-
-				tmpvar = fmt.Sprintf("scsi%s.fileName = \"%s\"\n", virtual_disks[i][1], virtual_disks[i][0])
-				vmx_contents_new = vmx_contents_new + tmpvar
-
-				tmpvar = fmt.Sprintf("scsi%s.present = \"true\"\n", virtual_disks[i][1])
 				vmx_contents_new = vmx_contents_new + tmpvar
 			}
 		}

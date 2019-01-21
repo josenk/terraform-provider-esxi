@@ -14,6 +14,8 @@ Requirements
 -   You MUST enable ssh access on your ESXi hypervisor.
   * Google 'How to enable ssh access on esxi'
 -   In general, you should know how to use terraform, esxi and some networking...
+  * You will most likely need a DHCP server on your primary network if you are deploying VMs with public OVF/OVA/VMX images.  (Sources that have unconfigured primary interfaces.)
+- The source OVF/OVA/VMX images must have open-vm-tools or vmware-tools installed to properly import an IPaddress.  (you need this to run provisioners)
 
 
 Building The Provider
@@ -68,14 +70,12 @@ Features and Compatibility
 * Terraform will Create, Destroy, Update & Read Extra Storage for Guests.
 
 
-Requirements
-------------
-1. This is a Terraform plugin, so you need Terraform installed...  :-)
-2. This plugin requires ovftool from VMware.  Download from VMware website.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You will need to manually set your path.
->https://www.vmware.com/support/developer/ovf/
-3. You MUST enable ssh access on your ESXi hypervisor.
-  * Google 'How to enable ssh access on esxi'
-4. In general, you should know how to use terraform, esxi and some networking...
+Vagrant vs Terraform.
+---------------------
+If you are using vagrant as a deployment tool (infa as code), you may want to consider a better tool.  Terraform.  Vagrant is better for development environments, while Terraform is better at managing infrastructure.  Please give my terraform plugin a try and give me some feedback.  What you're trying to do, what's missing, what works, what doesn't work, etc...
+>https://www.vagrantup.com/intro/vs/terraform.html
+>https://github.com/josenk/terraform-provider-esxi
+>https://github.com/josenk/vagrant-vmware-esxi
 
 
 Why this plugin?
@@ -86,7 +86,7 @@ Not everyone has vCenter, vSphere, expensive APIs...  These cost $$$.  ESXi is f
 How to install
 --------------
 Download and install Terraform on your local system using instructions from https://www.terraform.io/downloads.html.
-Clone this plugin from github, build and place a copy of it in your path or current directory of your terraform project.
+Clone this plugin from github, build and place a copy of it in your path or current directory of your terraform project.  Or download pre-built binaries from https://github.com/josenk/terraform-provider-esxi/releases.
 
 
 How to use and configure a main.tf file
@@ -193,6 +193,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.3.0 Add support to Update storage attachments.
 * 1.2.2 fix guest_update power, boot_disk_type defaults, README, windows support
 * 1.2.1 Fix ssh connection retries.
 * 1.2.0 Add support for notes (annotation)

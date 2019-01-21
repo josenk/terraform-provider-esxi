@@ -160,7 +160,7 @@ func resourceGUEST() *schema.Resource {
 						"virtual_disk_id": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
-							ForceNew: true,
+							ForceNew: false,
 						},
 						"slot": &schema.Schema{
 							Type:        schema.TypeString,
