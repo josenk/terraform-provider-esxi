@@ -212,6 +212,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	guestos := d.Get("guestos").(string)
 	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 	notes := d.Get("notes").(string)
+	power := d.Get("power").(string)
 
 	guestinfo, ok := d.Get("guestinfo").(map[string]interface{})
 	if !ok {
