@@ -189,7 +189,8 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if boot_disk_type == "zeroedthick" {
 			boot_disk_type = "thick"
 		}
-		dst_path := fmt.Sprintf("vi://%s:%s@%s/%s", c.esxiUserName, c.esxiPassword, c.esxiHostName, resource_pool_name)
+		password = url.QueryEscape(c.esxiPassword)
+		dst_path := fmt.Sprintf("vi://%s:%s@%s/%s", c.esxiUserName, password, c.esxiHostName, resource_pool_name)
 
 		net_param := ""
 		if (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) && virtual_networks[0][0] != "" {
