@@ -104,7 +104,9 @@ func readVmx_contents(c *Config, vmid string) (string, error) {
 }
 
 func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numvcpus int,
-	virthwver int, guestos string, virtual_networks [4][3]string, virtual_disks [60][2]string, notes string) error {
+	virthwver int, guestos string, virtual_networks [4][3]string, virtual_disks [60][2]string, notes string,
+	guestinfo map[string]interface{}) error {
+
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Printf("[updateVmx_contents]\n")
 
@@ -158,6 +160,15 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 			regexReplacement = fmt.Sprintf("\nannotation = \"%s\"", notes)
 			vmx_contents += regexReplacement
 		}
+	}
+
+	if len(guestinfo) > 0 {
+		parsed_vmx := ParseVMX(vmx_contents)
+		for k, v := range guestinfo {
+			log.Println("SAVING", k, v)
+			parsed_vmx["guestinfo."+k] = v.(string)
+		}
+		vmx_contents = EncodeVMX(parsed_vmx)
 	}
 
 	//

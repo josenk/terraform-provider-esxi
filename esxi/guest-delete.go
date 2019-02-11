@@ -10,6 +10,7 @@ import (
 func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	log.Println("[resourceGUESTDelete]")
 
 	var remote_cmd, stdout string
 	var err error
@@ -38,5 +39,6 @@ func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId("")
+
 	return nil
 }
