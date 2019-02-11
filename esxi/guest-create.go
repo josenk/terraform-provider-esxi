@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -191,7 +192,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if boot_disk_type == "zeroedthick" {
 			boot_disk_type = "thick"
 		}
-		password = url.QueryEscape(c.esxiPassword)
+		password := url.QueryEscape(c.esxiPassword)
 		dst_path := fmt.Sprintf("vi://%s:%s@%s/%s", c.esxiUserName, password, c.esxiHostName, resource_pool_name)
 
 		net_param := ""

@@ -230,3 +230,19 @@ func validateGuestOsType(guestos string) bool {
 	guestos = fmt.Sprintf(" %s\n", guestos)
 	return strings.Contains(allGuestOSs, guestos)
 }
+
+func validateSCSIType(scsitype string) bool {
+	log.Printf("[validateSCSIType]\n")
+
+	if scsitype == "" {
+		return true
+	}
+
+	allSCSItypes := `
+    lsilogic
+    pvscsi
+    lsisas1068
+	  `
+	scsitype = fmt.Sprintf(" %s\n", scsitype)
+	return strings.Contains(allSCSItypes, scsitype)
+}
