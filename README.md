@@ -24,9 +24,10 @@ Building The Provider
 Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-esxi`
 
 ```sh
-
-export GOPATH="/usr/local/lib"
+# Assuming GOPATH is set to something
 go get -u golang.org/x/crypto/ssh
+go get -u https://github.com/hashicorp/terraform.git
+go get -u https://github.com/josenk/terraform-provider-esxi.git
 
 mkdir -p $GOPATH/src/github.com/hashicorp
 cd $GOPATH/src/github.com/hashicorp
