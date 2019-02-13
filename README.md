@@ -24,10 +24,10 @@ Building The Provider
 Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-esxi`
 
 ```sh
-# Assuming GOPATH is set to something
+# check if GOPATH is set, if not it's a common practice to use `export GOPATH=$HOME/go`
 go get -u golang.org/x/crypto/ssh
-go get -u https://github.com/hashicorp/terraform.git
-go get -u https://github.com/josenk/terraform-provider-esxi.git
+go get -u github.com/hashicorp/terraform.git
+go get -u github.com/josenk/terraform-provider-esxi.git
 
 mkdir -p $GOPATH/src/github.com/hashicorp
 cd $GOPATH/src/github.com/hashicorp
