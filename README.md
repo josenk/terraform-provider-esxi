@@ -32,12 +32,12 @@ mkdir -p $GOPATH/src/github.com/hashicorp
 cd $GOPATH/src/github.com/hashicorp
 git clone https://github.com/hashicorp/terraform.git
 
-mkdir -p $GOPATH/src/github.com/terraform-providers
-cd $GOPATH/src/github.com/terraform-providers
+mkdir -p $GOPATH/src/github.com/josenk
+cd $GOPATH/src/github.com/josenk
 git clone https://github.com/josenk/terraform-provider-esxi.git
 
-cd $GOPATH/src/github.com/terraform-providers/terraform-provider-esxi
-go build -o terraform-provider-esxi_`cat version`
+cd $GOPATH/src/github.com/josenk/terraform-provider-esxi
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w -extldflags "-static"' -o terraform-provider-esxi_`cat version`
 
 cp terraform-provider-esxi_`cat version` /usr/local/bin
 ```
@@ -58,7 +58,7 @@ What's New:
 -----------
 * Terraform can import existing Guest VMs, Virtual Disks & Resource pools by name. See wiki page for more info.
 >https://github.com/josenk/terraform-provider-esxi/wiki/How-to-import
-* Added support for GuestInfo.  (Thanks for the contribution silasb.
+* Added support for GuestInfo.  (Thanks for the contribution silasb.)
   * This adds great provisioning options like Ignition and Cloud-Init!
 
 

@@ -86,7 +86,8 @@ func validateGuestOsType(guestos string) bool {
     centos6-64
     centos-64
     centos6
-    centos7-64
+    centos8-64
+		centos7-64
     centos7
     centos
     coreos-64
@@ -120,6 +121,10 @@ func validateGuestOsType(guestos string) bool {
     ecomstation
     fedora-64
     fedora
+		freebsd11-64
+    freebsd11
+		freebsd12-64
+    freebsd12
     freebsd-64
     freebsd
     genericlinux
