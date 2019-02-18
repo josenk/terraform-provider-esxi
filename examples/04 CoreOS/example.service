@@ -1,6 +1,0 @@
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/echo Hello World
-
-[Install]
-WantedBy=multi-user.target
