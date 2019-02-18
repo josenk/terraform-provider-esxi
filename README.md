@@ -25,9 +25,9 @@ Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provi
 
 ```sh
 # check if GOPATH is set, if not it's a common practice to use `export GOPATH=$HOME/go`
-go get -u golang.org/x/crypto/ssh
-go get -u github.com/hashicorp/terraform
-go get -u github.com/josenk/terraform-provider-esxi
+go get -u -v golang.org/x/crypto/ssh
+go get -u -v github.com/hashicorp/terraform
+go get -u -v github.com/josenk/terraform-provider-esxi
 
 cd $GOPATH/src/github.com/josenk/terraform-provider-esxi
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w -extldflags "-static"' -o terraform-provider-esxi_`cat version`
