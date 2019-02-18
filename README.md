@@ -29,14 +29,6 @@ go get -u golang.org/x/crypto/ssh
 go get -u github.com/hashicorp/terraform
 go get -u github.com/josenk/terraform-provider-esxi
 
-mkdir -p $GOPATH/src/github.com/hashicorp
-cd $GOPATH/src/github.com/hashicorp
-git clone https://github.com/hashicorp/terraform.git
-
-mkdir -p $GOPATH/src/github.com/josenk
-cd $GOPATH/src/github.com/josenk
-git clone https://github.com/josenk/terraform-provider-esxi.git
-
 cd $GOPATH/src/github.com/josenk/terraform-provider-esxi
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w -extldflags "-static"' -o terraform-provider-esxi_`cat version`
 
