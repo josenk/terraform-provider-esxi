@@ -104,7 +104,7 @@ func readVmx_contents(c *Config, vmid string) (string, error) {
 }
 
 func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numvcpus int,
-	virthwver int, guestos string, virtual_networks [4][3]string, virtual_disks [60][2]string, notes string,
+	virthwver int, guestos string, virtual_networks [10][3]string, virtual_disks [60][2]string, notes string,
 	guestinfo map[string]interface{}) error {
 
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
@@ -248,7 +248,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 		}
 		networkType = ""
 
-		for i := 0; i < 4; i++ {
+		for i := 0; i <= 9; i++ {
 			log.Printf("[updateVmx_contents] i: %s\n", i)
 
 			if virtual_networks[i][0] != "" {
@@ -289,7 +289,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	} else {
 
 		//  This is modify network interfaces
-		for i := 0; i < 4; i++ {
+		for i := 0; i <= 9; i++ {
 
 			// Fix virtual_network
 			if virtual_networks[i][0] != "" {

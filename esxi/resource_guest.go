@@ -195,7 +195,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Printf("[resourceGUESTCreate]\n")
 
-	var virtual_networks [4][3]string
+	var virtual_networks [10][3]string
 	var virtual_disks [60][2]string
 	var src_path string
 	var tmpint, i int
@@ -267,8 +267,8 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 
 	//  Validate lan adapters
 	lanAdaptersCount := d.Get("network_interfaces.#").(int)
-	if lanAdaptersCount > 3 {
-		lanAdaptersCount = 3
+	if lanAdaptersCount > 10 {
+		lanAdaptersCount = 10
 	}
 	for i = 0; i < lanAdaptersCount; i++ {
 		prefix := fmt.Sprintf("network_interfaces.%d.", i)

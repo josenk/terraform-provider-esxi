@@ -44,7 +44,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("virtual_networks: %q\n", virtual_networks)
 	nics := make([]map[string]interface{}, 0, 1)
 
-	for nic := 0; nic < 3; nic++ {
+	for nic := 0; nic < 10; nic++ {
 		if virtual_networks[nic][0] != "" {
 			out := make(map[string]interface{})
 			out["virtual_network"] = virtual_networks[nic][0]
@@ -72,7 +72,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [4][3]string, [60][2]string, string, string, map[string]interface{}, error) {
+func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [10][3]string, [60][2]string, string, string, map[string]interface{}, error) {
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Println("[guestREAD]")
 
@@ -80,7 +80,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents, power string
 	var disk_size, vdiskindex int
 	var memsize, numvcpus, virthwver string
-	var virtual_networks [4][3]string
+	var virtual_networks [10][3]string
 	var virtual_disks [60][2]string
 	var guestinfo map[string]interface{}
 
@@ -141,7 +141,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
 
 	// Used to keep track if a network interface is using static or generated macs.
-	var isGeneratedMAC [3]bool
+	var isGeneratedMAC [10]bool
 
 	//  Read vmx_contents line-by-line to get current settings.
 	vdiskindex = 0
