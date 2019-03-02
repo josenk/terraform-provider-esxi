@@ -14,7 +14,7 @@ import (
 
 func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
-	boot_disk_type string, boot_disk_size string, virtual_networks [4][3]string,
+	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string,
 	virtual_disks [60][2]string, guest_shutdown_timeout int, notes string,
 	guestinfo map[string]interface{}) (string, error) {
 
