@@ -29,17 +29,12 @@ Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provi
 
 ```sh
 
-mkdir ~/go
+mkdir $HOME/go
 export GOPATH="$HOME/go"
-go get -u golang.org/x/crypto/ssh
 
-mkdir -p $GOPATH/src/github.com/hashicorp
-cd $GOPATH/src/github.com/hashicorp
-git clone https://github.com/hashicorp/terraform.git
-
-mkdir -p $GOPATH/src/github.com/josenk
-cd $GOPATH/src/github.com/josenk
-git clone https://github.com/josenk/terraform-provider-esxi.git
+go get -u -v golang.org/x/crypto/ssh
+go get -u -v github.com/hashicorp/terraform
+go get -u -v github.com/josenk/terraform-provider-esxi
 
 cd $GOPATH/src/github.com/josenk/terraform-provider-esxi
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w -extldflags "-static"' -o terraform-provider-esxi_`cat version`
