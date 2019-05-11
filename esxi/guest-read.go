@@ -40,6 +40,17 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("notes", notes)
 	d.Set("guestinfo", guestinfo)
 
+	if d.Get("guest_startup_timeout").(int) > 1 {
+		d.Set("guest_startup_timeout", d.Get("guest_startup_timeout").(int))
+	} else {
+		d.Set("guest_startup_timeout", 60)
+	}
+	if d.Get("guest_shutdown_timeout").(int) > 0 {
+		d.Set("guest_shutdown_timeout", d.Get("guest_shutdown_timeout").(int))
+	} else {
+		d.Set("guest_shutdown_timeout", 20)
+	}
+
 	// Do network interfaces
 	log.Printf("virtual_networks: %q\n", virtual_networks)
 	nics := make([]map[string]interface{}, 0, 1)
@@ -59,7 +70,12 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("virtual_disks: %q\n", virtual_disks)
 	vdisks := make([]map[string]interface{}, 0, 1)
 
-	for vdisk := 0; vdisk < 3; vdisk++ {
+	if virtual_disks[0][0] == "" {
+		out := make(map[string]interface{})
+		vdisks = append(vdisks, out)
+	}
+
+	for vdisk := 0; vdisk < 60; vdisk++ {
 		if virtual_disks[vdisk][0] != "" {
 			out := make(map[string]interface{})
 			out["virtual_disk_id"] = virtual_disks[vdisk][0]

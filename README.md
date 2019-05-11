@@ -202,6 +202,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.4.3 Fix virtdisk count. Fixes to support Terraform 0.12
 * 1.4.2 Support 10 nics, more README changes
 * 1.4.1 Fix README build instructions, static binaries, update guest types
 * 1.4.0 Add GuestInfo (Cloud-init, Ignition!).   Fix, allow esxi passwords with special characters.

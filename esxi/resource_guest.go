@@ -59,7 +59,6 @@ func resourceGUEST() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: schema.EnvDefaultFunc("boot_disk_type", "thin"),
 				Description: "Guest boot disk type. thin, zeroedthick, eagerzeroedthick",
 			},
 			"boot_disk_size": &schema.Schema{
@@ -141,32 +140,31 @@ func resourceGUEST() *schema.Resource {
 			"guest_startup_timeout": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Default:      60,
+				Computed:     true,
 				Description:  "The amount of guest uptime, in seconds, to wait for an available IP address on this virtual machine.",
 				ValidateFunc: validation.IntBetween(1, 600),
 			},
 			"guest_shutdown_timeout": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Default:      20,
+				Computed:     true,
 				Description:  "The amount of time, in seconds, to wait for a graceful shutdown before doing a forced power off.",
 				ValidateFunc: validation.IntBetween(0, 600),
 			},
 			"virtual_disks": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: false,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"virtual_disk_id": &schema.Schema{
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: false,
+							Type:        schema.TypeString,
+							Required:    true,
+							DefaultFunc: schema.EnvDefaultFunc("virtual_disk_id", ""),
 						},
 						"slot": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							ForceNew:    false,
 							Computed:    true,
 							Description: "SCSI_Ctrl:SCSI_id.    Range  '0:1' to '0:15'.   SCSI_id 7 is not allowed.",
 						},
@@ -198,7 +196,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	var virtual_networks [10][3]string
 	var virtual_disks [60][2]string
 	var src_path string
-	var tmpint, i int
+	var tmpint, i, virtualDiskCount int
 
 	clone_from_vm := d.Get("clone_from_vm").(string)
 	ovf_source := d.Get("ovf_source").(string)
@@ -211,9 +209,9 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	numvcpus := d.Get("numvcpus").(string)
 	virthwver := d.Get("virthwver").(string)
 	guestos := d.Get("guestos").(string)
-	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 	notes := d.Get("notes").(string)
 	power := d.Get("power").(string)
+	guest_shutdown_timeout := d.Get("guest_shutdown_timeout").(int)
 
 	guestinfo, ok := d.Get("guestinfo").(map[string]interface{})
 	if !ok {
@@ -292,7 +290,12 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	//  Validate virtual_disks
-	virtualDiskCount := d.Get("virtual_disks.#").(int)
+	virtualDiskCount, ok = d.Get("virtual_disks.#").(int)
+	if !ok {
+		virtualDiskCount = 0
+		virtual_disks[0][0] = ""
+	}
+
 	if virtualDiskCount > 59 {
 		virtualDiskCount = 59
 	}
@@ -305,6 +308,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 
 		if attr, ok := d.Get(prefix + "slot").(string); ok && attr != "" {
 			virtual_disks[i][1] = d.Get(prefix + "slot").(string)
+			validateVirtualDiskSlot(virtual_disks[i][1])
 			result := validateVirtualDiskSlot(virtual_disks[i][1])
 			if result != "ok" {
 				return errors.New(result)
