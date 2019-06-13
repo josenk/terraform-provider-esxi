@@ -24,19 +24,11 @@ Building The Provider
 You first must set your GOPATH.   If you are unsure, please review the documentation at.
 >https://github.com/golang/go/wiki/SettingGOPATH
 
-
-Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-esxi`
+Clone repository and build
 
 ```sh
-
-mkdir $HOME/go
-export GOPATH="$HOME/go"
-
-go get -u -v golang.org/x/crypto/ssh
-go get -u -v github.com/hashicorp/terraform
-go get -u -v github.com/josenk/terraform-provider-esxi
-
-cd $GOPATH/src/github.com/josenk/terraform-provider-esxi
+git clone github.com/josenk/terraform-provider-esxi
+cd terraform-provider-esxi
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w -extldflags "-static"' -o terraform-provider-esxi_`cat version`
 
 sudo cp terraform-provider-esxi_`cat version` /usr/local/bin
