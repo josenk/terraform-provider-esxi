@@ -7,23 +7,28 @@
 variable "esxi_hostname" {
   default = "esxi"
 }
+
 variable "esxi_hostport" {
   default = "22"
 }
+
 variable "esxi_username" {
   default = "root"
 }
+
 variable "esxi_password" {
   # Unspecified will prompt
 }
 
-variable "virtual_network"    {
+variable "virtual_network" {
   default = "VM Network"
 }
-variable "disk_store"    {
-  default = "DiskStore"
+
+variable "disk_store" {
+  default = "DiskStore01"
 }
 
-variable "vm_hostname"   {
+variable "vm_hostname" {
   default = "vmtest05"
 }
+
