@@ -48,8 +48,8 @@ resource "esxi_guest" "Default" {
   }
 
   guestinfo = {
-    userdata.encoding = "gzip+base64"
-    userdata          = base64gzip(data.template_file.Default.rendered)
+    "userdata.encoding" = "gzip+base64"
+    "userdata"          = base64gzip(data.template_file.Default.rendered)
   }
 }
 
