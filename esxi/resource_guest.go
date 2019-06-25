@@ -183,6 +183,9 @@ func resourceGUEST() *schema.Resource {
 				Optional:    true,
 				Description: "pass data to VM",
 				ForceNew:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 		},
 	}
