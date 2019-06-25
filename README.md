@@ -194,6 +194,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.5.0 Support for Terraform 0.12, migrated examples to 0.12 format.
 * 1.4.3 Fix virtdisk count. Fixes to support Terraform 0.12
 * 1.4.2 Support 10 nics, more README changes
 * 1.4.1 Fix README build instructions, static binaries, update guest types

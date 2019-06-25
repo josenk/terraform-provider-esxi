@@ -154,7 +154,8 @@ func resourceGUEST() *schema.Resource {
 			"virtual_disks": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
-				Computed: true,
+				Computed: false,
+				Default:  nil,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"virtual_disk_id": &schema.Schema{
