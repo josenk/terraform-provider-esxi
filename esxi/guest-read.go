@@ -55,6 +55,10 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("virtual_networks: %q\n", virtual_networks)
 	nics := make([]map[string]interface{}, 0, 1)
 
+	if virtual_networks[0][0] == "" {
+		nics = nil
+	}
+
 	for nic := 0; nic < 10; nic++ {
 		if virtual_networks[nic][0] != "" {
 			out := make(map[string]interface{})
@@ -71,8 +75,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	vdisks := make([]map[string]interface{}, 0, 1)
 
 	if virtual_disks[0][0] == "" {
-		out := make(map[string]interface{})
-		vdisks = append(vdisks, out)
+		vdisks = nil
 	}
 
 	for vdisk := 0; vdisk < 60; vdisk++ {

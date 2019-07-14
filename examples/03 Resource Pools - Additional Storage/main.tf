@@ -5,7 +5,6 @@
 #   Use of variables here to hide/move the variables to a separate file
 #
 provider "esxi" {
-  version       = "~> 1.5"
   esxi_hostname = var.esxi_hostname
   esxi_hostport = var.esxi_hostport
   esxi_username = var.esxi_username
