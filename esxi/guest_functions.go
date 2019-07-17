@@ -1,7 +1,6 @@
 package esxi
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"regexp"
@@ -225,85 +224,86 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	//
 	//  Create/update networks network_interfaces
 	//
-	if iscreate == true {
 
-		//  This is create network interfaces.  Clean out old network interfaces.
-		scanner := bufio.NewScanner(strings.NewReader(vmx_contents))
-		for scanner.Scan() {
-
-			if scanner.Text() == "" || strings.Contains(scanner.Text(), "ethernet") == true {
-				// Do nothing
-				log.Printf("%s: skipped\n", scanner.Text())
-			} else {
-				vmx_contents_new = vmx_contents_new + scanner.Text() + "\n"
-			}
-		}
-
-		//  Add virtual networks.
-		var defaultNetworkType, networkType string
-		if virtual_networks[0][2] != "" {
-			defaultNetworkType = virtual_networks[0][2]
-		} else {
-			defaultNetworkType = "e1000"
-		}
-		networkType = ""
-
-		for i := 0; i <= 9; i++ {
-			log.Printf("[updateVmx_contents] i: %s\n", i)
-
-			if virtual_networks[i][0] != "" {
-
-				//  Set virtual_network name
-				log.Printf("[updateVmx_contents] virtual_networks[i][0]: %s\n", virtual_networks[i][0])
-				tmpvar = fmt.Sprintf("ethernet%d.networkName = \"%s\"\n", i, virtual_networks[i][0])
-				vmx_contents_new = vmx_contents_new + tmpvar
-
-				//  Set mac address
-				if virtual_networks[i][1] != "" {
-					tmpvar = fmt.Sprintf("ethernet%d.addressType = \"static\"\n", i)
-					vmx_contents_new = vmx_contents_new + tmpvar
-
-					tmpvar = fmt.Sprintf("ethernet%d.address = \"%s\"\n", i, virtual_networks[i][1])
-					vmx_contents_new = vmx_contents_new + tmpvar
-				}
-
-				//  Set network type
-				if virtual_networks[i][2] == "" {
-					networkType = defaultNetworkType
-				} else {
-					networkType = virtual_networks[i][2]
-				}
-
-				tmpvar = fmt.Sprintf("ethernet%d.virtualDev = \"%s\"\n", i, networkType)
-				vmx_contents_new = vmx_contents_new + tmpvar
-
-				tmpvar = fmt.Sprintf("ethernet%d.present = \"TRUE\"\n", i)
-
-				vmx_contents_new = vmx_contents_new + tmpvar
-			}
-		}
-
-		//  Save
-		vmx_contents = vmx_contents_new
-
+	//  Define default nic type.
+	var defaultNetworkType, networkType string
+	if virtual_networks[0][2] != "" {
+		defaultNetworkType = virtual_networks[0][2]
 	} else {
+		defaultNetworkType = "e1000"
+	}
 
-		//  This is modify network interfaces
-		for i := 0; i <= 9; i++ {
+	//  If this is first time provisioning, delete all the old ethernet configuration.
+	if iscreate == true {
+		log.Printf("[updateVmx_contents] Delete old ethernet configuration\n", i)
+		regexReplacement = fmt.Sprintf("")
+		for i = 0; i < 9; i++ {
+			re := regexp.MustCompile(fmt.Sprintf("ethernet%d.*\n", i))
+			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+		}
+	}
 
-			// Fix virtual_network
-			if virtual_networks[i][0] != "" {
-				re := regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".networkName = \".*\"")
-				regexReplacement = fmt.Sprintf("ethernet"+strconv.Itoa(i)+".networkName = \"%s\"", virtual_networks[i][0])
-				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+	//  Add/Modify virtual networks.
+	networkType = ""
+
+	for i := 0; i <= 9; i++ {
+		log.Printf("[updateVmx_contents] ethernet%d\n", i)
+
+		if virtual_networks[i][0] == "" && strings.Contains(vmx_contents, "ethernet"+strconv.Itoa(i)) == true {
+			//  This is Modify (Delete existing network configuration)
+			log.Printf("[updateVmx_contents] ethernet%d Delete existing.\n", i)
+			regexReplacement = fmt.Sprintf("")
+			re := regexp.MustCompile(fmt.Sprintf("ethernet%d.*\n", i))
+			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+		}
+
+		if virtual_networks[i][0] != "" && strings.Contains(vmx_contents, "ethernet"+strconv.Itoa(i)) == true {
+			//  This is Modify
+			log.Printf("[updateVmx_contents] ethernet%d Modify existing.\n", i)
+
+			//  Modify Network Name
+			re := regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".networkName = \".*\"")
+			regexReplacement = fmt.Sprintf("ethernet"+strconv.Itoa(i)+".networkName = \"%s\"", virtual_networks[i][0])
+			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+
+			//  Modify virtual Device
+			re = regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".virtualDev = \".*\"")
+			regexReplacement = fmt.Sprintf("ethernet"+strconv.Itoa(i)+".virtualDev = \"%s\"", virtual_networks[i][2])
+			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+
+			//  Modify MAC  todo
+		}
+
+		if virtual_networks[i][0] != "" && strings.Contains(vmx_contents, "ethernet"+strconv.Itoa(i)) == false {
+			//  This is create
+
+			//  Set virtual_network name
+			log.Printf("[updateVmx_contents] ethernet%d Create New: %s\n", i, virtual_networks[i][0])
+			tmpvar = fmt.Sprintf("\nethernet%d.networkName = \"%s\"\n", i, virtual_networks[i][0])
+			vmx_contents_new = tmpvar
+
+			//  Set mac address
+			if virtual_networks[i][1] != "" {
+				tmpvar = fmt.Sprintf("ethernet%d.addressType = \"static\"\n", i)
+				vmx_contents_new = vmx_contents_new + tmpvar
+
+				tmpvar = fmt.Sprintf("ethernet%d.address = \"%s\"\n", i, virtual_networks[i][1])
+				vmx_contents_new = vmx_contents_new + tmpvar
 			}
 
-			//  Fix device type
-			if virtual_networks[i][0] != "" && virtual_networks[i][2] != "" {
-				re := regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".virtualDev = \".*\"")
-				regexReplacement = fmt.Sprintf("ethernet"+strconv.Itoa(i)+".virtualDev = \"%s\"", virtual_networks[i][2])
-				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+			//  Set network type
+			if virtual_networks[i][2] == "" {
+				networkType = defaultNetworkType
+			} else {
+				networkType = virtual_networks[i][2]
 			}
+
+			tmpvar = fmt.Sprintf("ethernet%d.virtualDev = \"%s\"\n", i, networkType)
+			vmx_contents_new = vmx_contents_new + tmpvar
+
+			tmpvar = fmt.Sprintf("ethernet%d.present = \"TRUE\"\n", i)
+
+			vmx_contents = vmx_contents + vmx_contents_new + tmpvar
 		}
 	}
 

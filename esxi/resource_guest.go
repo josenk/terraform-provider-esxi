@@ -101,12 +101,14 @@ func resourceGUEST() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: false,
+				Default:  nil,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"virtual_network": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
-							ForceNew: true,
+							ForceNew: false,
+							Computed: true,
 						},
 						"mac_address": &schema.Schema{
 							Type:     schema.TypeString,
@@ -154,7 +156,8 @@ func resourceGUEST() *schema.Resource {
 			"virtual_disks": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
-				Computed: true,
+				Computed: false,
+				Default:  nil,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"virtual_disk_id": &schema.Schema{

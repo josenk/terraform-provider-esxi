@@ -24,11 +24,19 @@ Building The Provider
 You first must set your GOPATH.   If you are unsure, please review the documentation at.
 >https://github.com/golang/go/wiki/SettingGOPATH
 
-Clone repository and build
+
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-esxi`
 
 ```sh
-git clone github.com/josenk/terraform-provider-esxi
-cd terraform-provider-esxi
+
+mkdir $HOME/go
+export GOPATH="$HOME/go"
+
+go get -u -v golang.org/x/crypto/ssh
+go get -u -v github.com/hashicorp/terraform
+go get -u -v github.com/josenk/terraform-provider-esxi
+
+cd $GOPATH/src/github.com/josenk/terraform-provider-esxi
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w -extldflags "-static"' -o terraform-provider-esxi_`cat version`
 
 sudo cp terraform-provider-esxi_`cat version` /usr/local/bin
@@ -194,6 +202,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.5.0 Support for Terraform 0.12, migrated examples to 0.12 format. Support to modify virtual_network & nic_type.  Windows fixes.
 * 1.4.3 Fix virtdisk count. Fixes to support Terraform 0.12
 * 1.4.2 Support 10 nics, more README changes
 * 1.4.1 Fix README build instructions, static binaries, update guest types
