@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
-	"terraform-provider-esxi/esxi"
+	"github.com/josenk/terraform-provider-esxi/esxi"
 )
 
 func main() {
