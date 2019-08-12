@@ -2,10 +2,14 @@ package esxi
 
 import (
 	"fmt"
-	"golang.org/x/crypto/ssh"
+	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/tmc/scp"
+	"golang.org/x/crypto/ssh"
 )
 
 // Connect to esxi host using ssh
@@ -68,4 +72,28 @@ func runRemoteSshCommand(esxiSSHinfo SshConnectionStruct, remoteSshCommand strin
 
 	client.Close()
 	return stdout, err
+}
+
+func writeContentToRemoteFile(esxiSSHinfo SshConnectionStruct, content string, path string, shortCmdDesc string) (string, error) {
+	log.Println("[writeContentToRemoteFile] :" + shortCmdDesc)
+
+	f, _ := ioutil.TempFile("", "")
+	fmt.Fprintln(f, content)
+	f.Close()
+	defer os.Remove(f.Name())
+
+	client, session, err := connectToHost(esxiSSHinfo)
+	if err != nil {
+		log.Println("[writeContentToRemoteFile] Failed err: " + err.Error())
+		return "Failed to ssh to esxi host", err
+	}
+
+	err = scp.CopyPath(f.Name(), path, session)
+	if err != nil {
+		log.Println("[writeContentToRemoteFile] Failed err: " + err.Error())
+		return "Failed to scp file to esxi host", err
+	}
+
+	client.Close()
+	return content, err
 }
