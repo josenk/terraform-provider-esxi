@@ -114,11 +114,12 @@ resource "esxi_guest" "vmtest" {
   #clone_from_vm      = "Templates/centos7"
   #ovf_source        = "/local_path/centos-7.vmx"
 
-  network_interfaces = [
-    {
-      virtual_network = "VM Network"
-    },
-  ]
+  network_interfaces {
+    virtual_network = "VM Network"
+  }
+  network_interfaces {
+    virtual_network = "VM Network2"
+  }
 }
 ```
 
