@@ -46,8 +46,10 @@ resource "esxi_guest" "vmtest02" {
     mac_address     = "00:50:56:a1:b1:c2"
     nic_type        = "e1000"
   }
+  network_interfaces {
+    virtual_network = "VM Network2"
+  }
 
   guest_startup_timeout  = 45
   guest_shutdown_timeout = 30
 }
-

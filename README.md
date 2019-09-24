@@ -97,6 +97,10 @@ How to use and configure a main.tf file
 2. `vi main.tf`  # Use the contents of this example main.tf as a template. Specify provider parameters to access your ESXi host.  Modify the resources for resource pools and guest vm.
 
 ```
+terraform {
+  required_version = ">= 0.12"
+}
+
 provider "esxi" {
   esxi_hostname      = "esxi"
   esxi_hostport      = "22"
@@ -116,9 +120,6 @@ resource "esxi_guest" "vmtest" {
 
   network_interfaces {
     virtual_network = "VM Network"
-  }
-  network_interfaces {
-    virtual_network = "VM Network2"
   }
 }
 ```
@@ -199,10 +200,13 @@ Known issues with vmware_esxi
 * Only numvcpus are supported.   numcores is not supported.
 * Doesn't support CDrom or floppy.
 * Doesn't support Shared bus Interfaces, or Shared disks
+* Using an incorrect password could lockout your account using default esxi pam settings.
 
 
 Version History
 ---------------
+* 1.5.2 Handle large userdata using scp.  Connectivity test will retry only 3 times to help prevent account lockout.
+* 1.5.1 Windows Fix for special characters in esxi password.
 * 1.5.0 Support for Terraform 0.12, migrated examples to 0.12 format. Support to modify virtual_network & nic_type.  Windows fixes.
 * 1.4.3 Fix virtdisk count. Fixes to support Terraform 0.12
 * 1.4.2 Support 10 nics, more README changes

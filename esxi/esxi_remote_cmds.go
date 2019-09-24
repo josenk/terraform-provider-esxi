@@ -2,18 +2,17 @@ package esxi
 
 import (
 	"fmt"
+	"github.com/tmc/scp"
+	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/tmc/scp"
-	"golang.org/x/crypto/ssh"
 )
 
 // Connect to esxi host using ssh
-func connectToHost(esxiSSHinfo SshConnectionStruct) (*ssh.Client, *ssh.Session, error) {
+func connectToHost(esxiSSHinfo SshConnectionStruct, attempt int) (*ssh.Client, *ssh.Session, error) {
 
 	sshConfig := &ssh.ClientConfig{
 		User: esxiSSHinfo.user,
@@ -34,7 +33,7 @@ func connectToHost(esxiSSHinfo SshConnectionStruct) (*ssh.Client, *ssh.Session, 
 
 	esxi_hostandport := fmt.Sprintf("%s:%s", esxiSSHinfo.host, esxiSSHinfo.port)
 
-	attempt := 10
+	//attempt := 10
 	for attempt > 0 {
 		client, err := ssh.Dial("tcp", esxi_hostandport, sshConfig)
 		if err != nil {
@@ -60,7 +59,14 @@ func connectToHost(esxiSSHinfo SshConnectionStruct) (*ssh.Client, *ssh.Session, 
 func runRemoteSshCommand(esxiSSHinfo SshConnectionStruct, remoteSshCommand string, shortCmdDesc string) (string, error) {
 	log.Println("[runRemoteSshCommand] :" + shortCmdDesc)
 
-	client, session, err := connectToHost(esxiSSHinfo)
+	var attempt int
+
+	if remoteSshCommand == "vmware --version" {
+		attempt = 3
+	} else {
+		attempt = 10
+	}
+	client, session, err := connectToHost(esxiSSHinfo, attempt)
 	if err != nil {
 		log.Println("[runRemoteSshCommand] Failed err: " + err.Error())
 		return "Failed to ssh to esxi host", err
@@ -74,6 +80,7 @@ func runRemoteSshCommand(esxiSSHinfo SshConnectionStruct, remoteSshCommand strin
 	return stdout, err
 }
 
+//  Function to scp file to esxi host.
 func writeContentToRemoteFile(esxiSSHinfo SshConnectionStruct, content string, path string, shortCmdDesc string) (string, error) {
 	log.Println("[writeContentToRemoteFile] :" + shortCmdDesc)
 
@@ -82,7 +89,7 @@ func writeContentToRemoteFile(esxiSSHinfo SshConnectionStruct, content string, p
 	f.Close()
 	defer os.Remove(f.Name())
 
-	client, session, err := connectToHost(esxiSSHinfo)
+	client, session, err := connectToHost(esxiSSHinfo, 10)
 	if err != nil {
 		log.Println("[writeContentToRemoteFile] Failed err: " + err.Error())
 		return "Failed to ssh to esxi host", err

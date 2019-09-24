@@ -149,7 +149,6 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		log.Printf("[guestCREATE] New guest_name.vmx: %s\n", vmx_contents)
 
 		dst_vmx_file := fmt.Sprintf("%s/%s.vmx", fullPATH, guest_name)
-
 		vmx_contents, err = writeContentToRemoteFile(esxiSSHinfo, strings.Replace(vmx_contents, "\\\"", "\"", -1), dst_vmx_file, "write guest_name.vmx file")
 
 		//  Create boot disk (vmdk)
@@ -227,7 +226,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 				defer file.Close()
 			}
 
-			_, err = file.WriteString(ovf_cmd)
+			_, err = file.WriteString(strings.Replace(ovf_cmd, "%", "%%", -1))
 			if err != nil {
 				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat, err.Error())
 				defer file.Close()
