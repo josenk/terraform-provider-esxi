@@ -10,13 +10,14 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
 	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string,
 	virtual_disks [60][2]string, guest_shutdown_timeout int, notes string,
-	guestinfo map[string]interface{}) (string, error) {
+	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
 
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Printf("[guestCREATE]\n")
@@ -198,8 +199,20 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			net_param = " --network='" + virtual_networks[0][0] + "'"
 		}
 
-		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false "+
-			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'", boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
+		extra_params := "--X:injectOvfEnv --allowExtraConfig "
+		if (strings.HasSuffix(src_path, ".ova")) {
+			// in order to process any OVA params, guest should be immediately powered on
+			// This is because the ESXi host doesn't have a cache to store the OVF parameters, like the vCenter Server does.
+			// Therefore, you MUST use the ‘--X:injectOvfEnv’ debug option with the ‘--poweron’ option
+			extra_params = extra_params + "--powerOn --sourceType=OVA "
+
+            for ovf_prop_name, ovf_prop_value := range ovf_properties {
+                extra_params = fmt.Sprintf("%s  --prop:%s=\"%s\"", extra_params, ovf_prop_name, ovf_prop_value)
+            }
+		}
+
+		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false %s "+
+			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'",extra_params, boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
 
 		if runtime.GOOS == "windows" {
 			osShellCmd = "cmd.exe"
@@ -260,6 +273,24 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	vmid, err = guestGetVMID(c, guest_name)
 	if err != nil {
 		return "", err
+	}
+
+	//
+	//   In case of OVA VM, we need to spin it up in "running" state to pass params, thus
+	//   we need to shutdown it before proceeding with disk resize
+	//   Possible, that we need to wait for initial cloud-init process to finish, i.e. shutdown gracefully.
+	//
+	currentpowerstate := guestPowerGetState(c, vmid)
+    fmt.Println(fmt.Sprintf(">>> Current VM PowerState is %s", currentpowerstate))
+	if currentpowerstate == "on" {
+		// allow cloud-init process, if any to initially provision instance
+		// before doing resizing of the boot disk itself
+		duration := time.Duration(90)*time.Second
+		time.Sleep(duration)
+		_, err = guestPowerOff(c, vmid, guest_shutdown_timeout)
+		if err != nil {
+			return vmid, fmt.Errorf("Failed to gracefully shutdown machine before resizing boot disk.\n")
+		}
 	}
 
 	//
