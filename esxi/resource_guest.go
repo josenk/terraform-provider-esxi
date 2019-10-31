@@ -351,7 +351,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	for i = 0; i < ovfPropsCount; i++ {
-		prefix := fmt.Sprintf("ovf_properties.%d.", i)
+		prefix := fmt.Sprintf("ovf_property.%d.", i)
 
 		if name, ok := d.Get(prefix + "name").(string); ok && name != "" {
 
