@@ -200,8 +200,8 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		}
 
 		extra_params := "--X:injectOvfEnv --allowExtraConfig "
-		if (strings.HasSuffix(src_path, ".ova")) {
-			// in order to process any OVA params, guest should be immediately powered on
+		if (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) {
+			// in order to process any OVF params, guest should be immediately powered on
 			// This is because the ESXi host doesn't have a cache to store the OVF parameters, like the vCenter Server does.
 			// Therefore, you MUST use the ‘--X:injectOvfEnv’ debug option with the ‘--poweron’ option
 			extra_params = extra_params + "--powerOn --sourceType=OVA "
