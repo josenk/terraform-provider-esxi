@@ -196,6 +196,7 @@ Configuration reference
 
 Known issues with vmware_esxi
 -----------------------------
+* Using a local source vmx files should not have any networks configured.  There is very limited network interface mapping abilities in ovf_tools for vmx files.  It's best to simply clean out all network information from your vmx file.  The plugin will add network configuration to the destination vm guest as required.
 * terraform import cannot import the guest disk type (thick, thin, etc) if the VM is powered on and cannot import the guest ip_address if it's powered off.
 * Only numvcpus are supported.   numcores is not supported.
 * Doesn't support CDrom or floppy.
@@ -205,6 +206,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.5.3 Fix introduced bug when creating a bare-metal guest.
 * 1.5.2 Handle large userdata using scp.  Connectivity test will retry only 3 times to help prevent account lockout.
 * 1.5.1 Windows Fix for special characters in esxi password.
 * 1.5.0 Support for Terraform 0.12, migrated examples to 0.12 format. Support to modify virtual_network & nic_type.  Windows fixes.
