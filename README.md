@@ -206,6 +206,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.5.4.Fix bare-metal build when using additional virtual disks.
 * 1.5.3 Fix introduced bug when creating a bare-metal guest.
 * 1.5.2 Handle large userdata using scp.  Connectivity test will retry only 3 times to help prevent account lockout.
 * 1.5.1 Windows Fix for special characters in esxi password.
