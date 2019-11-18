@@ -67,6 +67,14 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		// check if path already exists.
 		fullPATH := fmt.Sprintf("\"/vmfs/volumes/%s/%s\"", disk_store, guest_name)
 		boot_disk_vmdkPATH = fmt.Sprintf("\"/vmfs/volumes/%s/%s/%s.vmdk\"", disk_store, guest_name, guest_name)
+
+		remote_cmd = fmt.Sprintf("ls -d %s", boot_disk_vmdkPATH)
+		stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if guest path already exists.")
+		if strings.Contains(stdout, "No such file or directory") != true {
+			fmt.Printf("Error: Guest may already exists. vmdkPATH:%s\n", boot_disk_vmdkPATH)
+			return "", fmt.Errorf("Guest may already exists. vmdkPATH:%s\n", boot_disk_vmdkPATH)
+		}
+
 		remote_cmd = fmt.Sprintf("ls -d %s", fullPATH)
 		stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if guest path already exists.")
 		if strings.Contains(stdout, "No such file or directory") == true {
@@ -76,9 +84,6 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 				log.Printf("Failed to create guest path. fullPATH:%s\n", fullPATH)
 				return "", fmt.Errorf("Failed to create guest path. fullPATH:%s\n", fullPATH)
 			}
-		} else {
-			fmt.Printf("Error: Guest path already exists. fullPATH:%s\n", fullPATH)
-			return "", fmt.Errorf("Guest path already exists. fullPATH:%s\n", fullPATH)
 		}
 
 		hasISO := false
