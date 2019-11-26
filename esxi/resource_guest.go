@@ -174,6 +174,25 @@ func resourceGUEST() *schema.Resource {
 					},
 				},
 			},
+			"ovf_property": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: false,
+				Default:  nil,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": &schema.Schema{
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"value": &schema.Schema{
+							Type:        schema.TypeString,
+							Required:    true,
+							Computed:    false,
+						},
+					},
+				},
+			},
 			"notes": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -202,7 +221,8 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	var virtual_networks [10][3]string
 	var virtual_disks [60][2]string
 	var src_path string
-	var tmpint, i, virtualDiskCount int
+	var tmpint, i, virtualDiskCount, ovfPropsCount int
+	var ovf_properties map[string]string
 
 	clone_from_vm := d.Get("clone_from_vm").(string)
 	ovf_source := d.Get("ovf_source").(string)
@@ -322,9 +342,29 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	//  Parse ovf properties, if any
+	ovfPropsCount, ok = d.Get("ovf_property.#").(int)
+	if !ok {
+		ovfPropsCount = 0
+	} else {
+		ovf_properties = make(map[string]string)
+	}
+
+	for i = 0; i < ovfPropsCount; i++ {
+		prefix := fmt.Sprintf("ovf_property.%d.", i)
+
+		if name, ok := d.Get(prefix + "name").(string); ok && name != "" {
+
+			if value, ok := d.Get(prefix + "value").(string); ok && value != "" {
+				ovf_properties[name] = value
+			}
+	  }
+	}
+
+
 	vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
 		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks,
-		virtual_disks, guest_shutdown_timeout, notes, guestinfo)
+		virtual_disks, guest_shutdown_timeout, notes, guestinfo, ovf_properties)
 	if err != nil {
 		tmpint, _ = strconv.Atoi(vmid)
 		if tmpint > 0 {
