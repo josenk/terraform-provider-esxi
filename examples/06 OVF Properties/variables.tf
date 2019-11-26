@@ -25,19 +25,14 @@ variable "virtual_network" {
 }
 
 variable "disk_store" {
-  default = "ESXI"
+  default = "DiskStore01"
 }
 
-# Application specific variables
-
-variable "vm_clone_from" {
-  default = "templateU18D"
-}
-
-variable "vm_ovf_local_path" {
-   default = "/home/slavko/personal/ESXI/bionic/bionic.ova"
+# Example downloaded from https://cloud-images.ubuntu.com/
+variable "ovf_file" {
+   default = "ubuntu-19.04-server-cloudimg-amd64.ova"
 }
 
 variable "vm_hostname" {
-  default = "vmtest"
+  default = "vmtest06"
 }

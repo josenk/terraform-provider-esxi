@@ -35,12 +35,6 @@ resource "esxi_guest" "vmtest" {
      virtual_network = var.virtual_network
   }
 
-//  guestinfo = {
-////    "coreos.config.data.encoding" = "base64"
-////    "coreos.config.data" = base64encode(data.ignition_config.coreos.rendered)
-//    "userdata.encoding" = "gzip+base64"
-//    "userdata"          = base64gzip(data.template_file.userdata_default.rendered)
-//  }
 
   guestinfo = {
     "userdata.encoding" = "gzip+base64"
@@ -48,23 +42,22 @@ resource "esxi_guest" "vmtest" {
   }
 
   #
-  #  Specify an existing guest to clone, an ovf source, or neither to build a bare-metal guest vm.
+  #  Specify an ovf file to use as a source.
   #
-  #clone_from_vm      = var.vm_clone_from #  Source vm to clone. Mutually exclusive with ovf_source option.
-  ovf_source        = var.vm_ovf_local_path # ovf files to use as a source. Mutually exclusive with clone_from_vm option.
+  ovf_source        = var.ovf_file
 
   ovf_property {
-    name = "password"
+    key = "password"
     value = "Passw0rd1"
   }
 
   ovf_property {
-    name = "hostname"
+    key = "hostname"
     value = "HelloWorld"
   }
 
   ovf_property {
-    name = "user-data"
+    key = "user-data"
     value = base64encode(data.template_file.userdata_default.rendered)
   }
 

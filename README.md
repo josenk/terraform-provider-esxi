@@ -9,7 +9,7 @@ Terraform Provider
 Requirements
 ------------
 -   [Terraform](https://www.terraform.io/downloads.html) 0.10.1+
--   [Go](https://golang.org/doc/install) 1.11.5 (to build the provider plugin)
+-   [Go](https://golang.org/doc/install) 1.11+ (to build the provider plugin)
 -   [ovftool](https://www.vmware.com/support/developer/ovf/) from VMware.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You will need to manually set your path.
 -   You MUST enable ssh access on your ESXi hypervisor.
   * Google 'How to enable ssh access on esxi'
@@ -182,8 +182,8 @@ Configuration reference
     * virtual_disk_id - Required - virtual_disk.id from esxi_virtual_disk resource.
     * slot - Required - SCSI_Ctrl:SCSI_id.  Range  '0:1' to '3:15'.  SCSI_id 7 is not allowed.
   * power - Optional - on, off.
-  * guest_startup_timeout - Optional - The amount of guest uptime, in seconds, to wait for an available IP address on this virtual machine.
-  * guest_shutdown_timeout - Optional - The amount of time, in seconds, to wait for a graceful shutdown before doing a forced power off.
+  * guest_startup_timeout - Optional - The amount of guest uptime, in seconds, to wait for an available IP address on this virtual machine. Default 120s.
+  * guest_shutdown_timeout - Optional - The amount of time, in seconds, to wait for a graceful shutdown before doing a forced power off. Default 20s.
   * notes - Optional - The Guest notes (annotation).
   * guestinfo - Optional - The Guestinfo root
     * metadata - Optional - A JSON string containing the cloud-init metadata.
@@ -192,77 +192,10 @@ Configuration reference
     * userdata.encoding - Optional - The encoding type for guestinfo.userdata. (base64 or gzip+base64)
     * vendordata - Optional - A YAML document containing the cloud-init vendor data.
     * vendordata.encoding - Optional - The encoding type for guestinfo.vendordata (base64 or gzip+base64)
-  * ovf_property - Optional - List of ovf properties to override in ova
-    * name - Required - Name of the property
+  * ovf_properties - Optional - List of ovf properties to override in ovf/ova sources.
+    * key - Required - Key of the property
     * value - Required - Value of the property
-
-Notes on ova files deploying
-----------------------------
-
-Having downloaded ova template, you can explore supported properties by using command
-
-```
-ovftool --hideEula image.ova
-```
-
-Example output
-
-```
-Properties:
-  Key:         instance-id
-  Label:       A Unique Instance ID for this instance
-  Type:        string
-  Description: Specifies the instance id.  This is required and used to
-               determine if the machine should take "first boot" actions
-  Value:       id-ovf
-
-  Key:         hostname
-  Type:        string
-  Description: Specifies the hostname for the appliance
-  Value:       ubuntuguest
-
-  Key:         user-data
-  Label:       Encoded user-data
-  Type:        string
-  Description: In order to fit into a xml attribute, this value is base64
-               encoded . It will be decoded, and then processed normally as
-               user-data.
-
-  Key:         password
-  Label:       Default User's password
-  Type:        string
-  Description: If set, the default user's password will be set to this value to
-               allow password based login.  The password will be good for only
-               a single login.  If set to the string 'RANDOM' then a random
-               password will be generated, and written to the console.
-  Value:       q
-
-```
-
-In particular, you might discover that OVA image accepts cloud-init data via specific parameter called `user-data`,
-like in ubuntu cloud image https://cloud-images.ubuntu.com/bionic/current/
-
-Thus for such images, you will need to inject initialization template for cloud-init via ovf_property,
-as guest_info might not work for your scenario. Note, that in this case cloud-init template can override
-some other ovf_properties, like `password` in example below.
-
-```
-  ovf_property {
-    name = "password"
-    value = "Passw0rd1"
-  }
-
-  ovf_property {
-    name = "hostname"
-    value = "HelloWorld"
-  }
-
-  ovf_property {
-    name = "user-data"
-    value = base64encode(data.template_file.userdata_default.rendered)
-  }
-  ```
-
+  * ovf_properties_timer - Optional - Length of time to wait for ovf_properties to process.  Default 90s.
 
 
 Known issues with vmware_esxi
@@ -277,7 +210,8 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
-* 1.5.4.Fix bare-metal build when using additional virtual disks.
+* 1.6.0 Add support for ovf_properties for OVF/OVA sources.
+* 1.5.4 Fix bare-metal build when using additional virtual disks.
 * 1.5.3 Fix introduced bug when creating a bare-metal guest.
 * 1.5.2 Handle large userdata using scp.  Connectivity test will retry only 3 times to help prevent account lockout.
 * 1.5.1 Windows Fix for special characters in esxi password.
