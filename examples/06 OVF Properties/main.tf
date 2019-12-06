@@ -35,17 +35,17 @@ resource "esxi_guest" "vmtest" {
   #
   ovf_source        = var.ovf_file
 
-  ovf_property {
+  ovf_properties {
     key = "password"
     value = "Passw0rd1"
   }
 
-  ovf_property {
+  ovf_properties {
     key = "hostname"
     value = "HelloWorld"
   }
 
-  ovf_property {
+  ovf_properties {
     key = "user-data"
     value = base64encode(data.template_file.userdata_default.rendered)
   }

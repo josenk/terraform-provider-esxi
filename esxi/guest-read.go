@@ -38,6 +38,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("ip_address", ip_address)
 	d.Set("power", power)
 	d.Set("notes", notes)
+  
 	if len(guestinfo) != 0 {
 		d.Set("guestinfo", guestinfo)
 	}
