@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -83,7 +84,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			remote_cmd = fmt.Sprintf("mkdir %s", fullPATH)
 			stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create guest path")
 			if err != nil {
-				log.Printf("Failed to create guest path. fullPATH:%s\n", fullPATH)
+				log.Printf("[guestCREATE] Failed to create guest path. fullPATH:%s\n", fullPATH)
 				return "", fmt.Errorf("Failed to create guest path. fullPATH:%s\n", fullPATH)
 			}
 		}
@@ -167,20 +168,20 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if err != nil {
 			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
 			stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "cleanup guest path because of failed events")
-			log.Printf("Failed to vmkfstools (make boot disk):%s\n", err.Error())
+			log.Printf("[guestCREATE] Failed to vmkfstools (make boot disk):%s\n", err.Error())
 			return "", fmt.Errorf("Failed to vmkfstools (make boot disk):%s\n", err.Error())
 		}
 
 		poolID, err := getPoolID(c, resource_pool_name)
 		log.Println("[guestCREATE] DEBUG: " + poolID)
 		if err != nil {
-			log.Printf("Failed to use Resource Pool ID:%s\n", poolID)
+			log.Printf("[guestCREATE] Failed to use Resource Pool ID:%s\n", poolID)
 			return "", fmt.Errorf("Failed to use Resource Pool ID:%s\n", poolID)
 		}
 		remote_cmd = fmt.Sprintf("vim-cmd solo/registervm %s %s %s", dst_vmx_file, guest_name, poolID)
 		_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "solo/registervm")
 		if err != nil {
-			log.Printf("Failed to register guest:%s\n", err.Error())
+			log.Printf("[guestCREATE] Failed to register guest:%s\n", err.Error())
 			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
 			stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "cleanup guest path because of failed events")
 			return "", fmt.Errorf("Failed to register guest:%s\n", err.Error())
@@ -190,8 +191,22 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		//  Build VM by ovftool
 
 		//  Check if source file exist.
-		if !strings.HasPrefix(src_path, "vi://") {
+		if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
+			log.Printf("[guestCREATE] Source is URL.\n")
+			resp, err := http.Get(src_path)
+			defer resp.Body.Close()
+			if (err != nil) || (resp.StatusCode != 200) {
+				log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
+				log.Printf("[guestCREATE] URL StatusCode: %s\n", resp.StatusCode)
+				log.Printf("[guestCREATE] URL Error: %s\n", err.Error())
+				return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err.Error())
+			}
+		} else if strings.HasPrefix(src_path, "vi://") {
+			log.Printf("[guestCREATE] Source is Guest VM (vi).\n")
+		} else {
+			log.Printf("[guestCREATE] Source is local.\n")
 			if _, err := os.Stat(src_path); os.IsNotExist(err) {
+				log.Printf("[guestCREATE] File not found, Error: %s\n", err.Error())
 				return "", fmt.Errorf("File not found: %s\n", src_path)
 			}
 		}
@@ -275,7 +290,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		log.Printf("[guestCREATE] ovftool output: %q\n", out.String())
 
 		if err != nil {
-			log.Printf("Failed, There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
+			log.Printf("[guestCREATE] Failed, There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
 			return "", fmt.Errorf("There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
 		}
 	}

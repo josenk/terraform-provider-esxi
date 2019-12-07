@@ -251,7 +251,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 
 		if virtual_networks[i][0] == "" && strings.Contains(vmx_contents, "ethernet"+strconv.Itoa(i)) == true {
 			//  This is Modify (Delete existing network configuration)
-			log.Printf("[updateVmx_contents] ethernet%d Delete existing.\n", i)
+			log.Printf("[updateVmx_contents] Modify ethernet%d - Delete existing.\n", i)
 			regexReplacement = fmt.Sprintf("")
 			re := regexp.MustCompile(fmt.Sprintf("ethernet%d.*\n", i))
 			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
@@ -259,7 +259,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 
 		if virtual_networks[i][0] != "" && strings.Contains(vmx_contents, "ethernet"+strconv.Itoa(i)) == true {
 			//  This is Modify
-			log.Printf("[updateVmx_contents] ethernet%d Modify existing.\n", i)
+			log.Printf("[updateVmx_contents] Modify ethernet%d - Modify existing.\n", i)
 
 			//  Modify Network Name
 			re := regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".networkName = \".*\"")
@@ -271,7 +271,22 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 			regexReplacement = fmt.Sprintf("ethernet"+strconv.Itoa(i)+".virtualDev = \"%s\"", virtual_networks[i][2])
 			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
 
-			//  Modify MAC  todo
+			//  Modify MAC (dynamic to static only. static to dynamic is not implemented)
+			if virtual_networks[i][1] != "" {
+				log.Printf("[updateVmx_contents] ethernet%d Modify MAC: %s\n", i, virtual_networks[i][0])
+
+				re = regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".[a-zA-Z]*ddress = \".*\"")
+				regexReplacement = fmt.Sprintf("ethernet"+strconv.Itoa(i)+".address = \"%s\"", virtual_networks[i][1])
+				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+
+				re = regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".addressType = \".*\"")
+				regexReplacement = fmt.Sprintf("ethernet" + strconv.Itoa(i) + ".addressType = \"static\"")
+				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+
+				re = regexp.MustCompile("ethernet" + strconv.Itoa(i) + ".generatedAddressOffset = \".*\"")
+				regexReplacement = fmt.Sprintf("")
+				vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+			}
 		}
 
 		if virtual_networks[i][0] != "" && strings.Contains(vmx_contents, "ethernet"+strconv.Itoa(i)) == false {

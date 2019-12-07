@@ -144,7 +144,7 @@ func resourceGUEST() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				Description:  "The amount of guest uptime, in seconds, to wait for an available IP address on this virtual machine.",
-				ValidateFunc: validation.IntBetween(1, 600),
+				ValidateFunc: validation.IntBetween(0, 600),
 			},
 			"guest_shutdown_timeout": {
 				Type:         schema.TypeInt,
@@ -246,18 +246,20 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	notes := d.Get("notes").(string)
 	power := d.Get("power").(string)
 
-	if d.Get("guest_startup_timeout").(int) > 0 {
+	if d.Get("guest_startup_timeout").(int) >= 0 {
 		d.Set("guest_startup_timeout", d.Get("guest_startup_timeout").(int))
 	} else {
 		d.Set("guest_startup_timeout", 120)
 	}
-	if d.Get("guest_shutdown_timeout").(int) > 0 {
+
+	if d.Get("guest_shutdown_timeout").(int) >= 0 {
 		d.Set("guest_shutdown_timeout", d.Get("guest_shutdown_timeout").(int))
 		guest_shutdown_timeout = d.Get("guest_shutdown_timeout").(int)
 	} else {
 		d.Set("guest_shutdown_timeout", 20)
 	}
-	if d.Get("ovf_properties_timer").(int) > 0 {
+
+	if d.Get("ovf_properties_timer").(int) >= 0 {
 		d.Set("ovf_properties_timer", d.Get("ovf_properties_timer").(int))
 		ovf_properties_timer = d.Get("ovf_properties_timer").(int)
 	} else {

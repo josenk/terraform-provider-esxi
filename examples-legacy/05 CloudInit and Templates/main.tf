@@ -14,11 +14,11 @@ provider "esxi" {
 #########################################
 #  cloud-init for vmware!
 #  You must install it on your source VM before cloning it!
-#    See https://github.com/akutz/cloud-init-vmware-guestinfo for more details.
+#    See https://github.com/vmware/cloud-init-vmware-guestinfo for more details.
 #    and https://cloudinit.readthedocs.io/en/latest/topics/examples.html#
 #
 #
-#    yum install https://github.com/akutz/cloud-init-vmware-guestinfo/releases/download/v1.1.0/cloud-init-vmware-guestinfo-1.1.0-1.el7.noarch.rpm
+#    yum install https://github.com/vmware/cloud-init-vmware-guestinfo/releases/download/v1.1.0/cloud-init-vmware-guestinfo-1.1.0-1.el7.noarch.rpm
 #    cloud-init clean
 #########################################
 

@@ -38,7 +38,10 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("ip_address", ip_address)
 	d.Set("power", power)
 	d.Set("notes", notes)
-	d.Set("guestinfo", guestinfo)
+  
+	if len(guestinfo) != 0 {
+		d.Set("guestinfo", guestinfo)
+	}
 
 	// Do network interfaces
 	log.Printf("virtual_networks: %q\n", virtual_networks)
@@ -223,16 +226,18 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 					isGeneratedMAC[index] = true
 				}
 
-			case "generatedAddress":
-				if isGeneratedMAC[index] == true {
-					virtual_networks[index][1] = results[3]
-					log.Printf("[guestREAD] %s : %s\n", results[0], results[3])
-				}
+				//  Done't save generatedAddress...   It should not be saved because it
+			//  should be considered dynamic & is breaks the update MAC address code.
+			//case "generatedAddress":
+			//	if isGeneratedMAC[index] == true {
+			//		virtual_networks[index][1] = results[3]
+			//		log.Printf("[guestREAD] %s : %s\n", results[0], results[3])
+			//	}
 
 			case "address":
 				if isGeneratedMAC[index] == false {
 					virtual_networks[index][1] = results[3]
-					log.Printf("[resourceGUESTRead] %s : %s\n", results[0], results[3])
+					log.Printf("[guestREAD] %s : %s\n", results[0], results[3])
 				}
 
 			case "virtualDev":
