@@ -54,6 +54,8 @@ Terraform-provider-esxi plugin
 >https://configmax.vmware.com/guest
 
 
+
+
 What's New:
 -----------
 * Terraform can import existing Guest VMs, Virtual Disks & Resource pools by name. See wiki page for more info.
@@ -71,6 +73,13 @@ Features and Compatibility
 * Terraform will Create, Destroy, Update & Read Guest VMs.
 * Terraform will Create, Destroy, Update & Read Extra Storage for Guests.
 
+This is a provider!  NOT a provisioner.
+---------------------------------------
+* This plugin does not configure your guest VM, it creates it.
+* To configure your guest VM after it's built, you need to use a provisioner.
+  * Refer to Hashicorp list of provisioners: https://www.terraform.io/docs/provisioners/index.html
+* To help you get started, there is are examples in a separate repo I created.   You can create a Pull Request if you would like to contribute.
+  * https://github.com/josenk/terraform-provider-esxi-wiki
 
 Vagrant vs Terraform.
 ---------------------
@@ -206,6 +215,7 @@ Known issues with vmware_esxi
 * Doesn't support CDrom or floppy.
 * Doesn't support Shared bus Interfaces, or Shared disks
 * Using an incorrect password could lockout your account using default esxi pam settings.
+
 
 
 Version History
