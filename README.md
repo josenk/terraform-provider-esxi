@@ -177,7 +177,7 @@ Configuration reference
   * boot_disk_size - Optional - Specify boot disk size or grow cloned vm to this size.
   * guestos - Optional - Default will be taken from cloned source.
   * clone_from_vm - Source vm to clone. Mutually exclusive with ovf_source option.
-  * ovf_source - ovf files to use as a source. Mutually exclusive with clone_from_vm option.
+  * ovf_source - ovf files or URLs to use as a source. Mutually exclusive with clone_from_vm option.
   * disk_store - Required - esxi Disk Store where guest vm will be created.
   * resource_pool_name - Optional - Any existing or terraform managed resource pool name. - Default "/".
   * memsize - Optional - Memory size in MB.  (ie, 1024 == 1GB). See esxi documentation for limits. - Default 512 or default taken from cloned source.
@@ -205,6 +205,20 @@ Configuration reference
     * key - Required - Key of the property
     * value - Required - Value of the property
   * ovf_properties_timer - Optional - Length of time to wait for ovf_properties to process.  Default 90s.
+
+
+Using ovf_source & clone_from_vm
+--------------------------------
+* clone_from_vm clones from sources on the esxi host.
+  * The source VM must be powered off.
+  * If the source VM is stored in a resource group, you must specify the path, for example.
+    * clone_from_vm = "my_resource_group/my_source_vm"
+* ovf_source clones from sources on your local hard disk or a URL.
+  * A local ova, ovf, vmx file.  See known issues (below) with vmx sources.
+  * URL specifying a remote ova.
+    * For example, Ubuntu cloud-images: https://cloud-images.ubuntu.com/trusty/current/trusty-server-cloudimg-amd64.ova
+* If neither is specified, then a bare-metal VM will be created.  There will be no OS on this vm.  If the VM is powered on, it will default to a network PXE boot.  
+* ovf_source & clone_from_vm are mutually exclusive.
 
 
 Known issues with vmware_esxi
