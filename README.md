@@ -229,12 +229,14 @@ Known issues with vmware_esxi
 * Doesn't support CDrom or floppy.
 * Doesn't support Shared bus Interfaces, or Shared disks
 * Using an incorrect password could lockout your account using default esxi pam settings.
+* Don't set guest_startup_timeout or guest_shutdown_timeout to 0 (zero).  It's valid, however it will be changed to default values by terraform.
 
 
 
 Version History
 ---------------
-* 1.6.1 Fix some minor refesh bugs, allow http(s) ovf sources.
+* 1.6.2 Fix Defaults for guest_startup_timeout and guest_shutdown_timeout.  Fix IP address detection type2 to always run regardless of guest_startup_timeout value.
+* 1.6.1 Fix some minor refresh bugs, allow http(s) ovf sources.
 * 1.6.0 Add support for ovf_properties for OVF/OVA sources.
 * 1.5.4 Fix bare-metal build when using additional virtual disks.
 * 1.5.3 Fix introduced bug when creating a bare-metal guest.

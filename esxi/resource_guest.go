@@ -246,12 +246,12 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	notes := d.Get("notes").(string)
 	power := d.Get("power").(string)
 
-	if d.Get("guest_startup_timeout").(int) >= 0 {
+	if d.Get("guest_startup_timeout").(int) > 0 {
 		d.Set("guest_startup_timeout", d.Get("guest_startup_timeout").(int))
 	} else {
 		d.Set("guest_startup_timeout", 120)
 	}
-	if d.Get("guest_shutdown_timeout").(int) >= 0 {
+	if d.Get("guest_shutdown_timeout").(int) > 0 {
 		d.Set("guest_shutdown_timeout", d.Get("guest_shutdown_timeout").(int))
 		guest_shutdown_timeout = d.Get("guest_shutdown_timeout").(int)
 	} else {

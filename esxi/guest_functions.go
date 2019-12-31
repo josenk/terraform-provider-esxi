@@ -488,16 +488,11 @@ func guestGetIpAddress(c *Config, vmid string, guest_startup_timeout int) string
 	//
 	// Alternate method to get IP
 	//
-	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.summary %s 2>/dev/null | grep 'uptimeSeconds ='|sed 's/^.*= //g'|sed s/,//g", vmid)
-	stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get uptime")
-	uptime, _ = strconv.Atoi(stdout)
-	if uptime > 120 {
-		remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null | grep -m 1 '^   ipAddress = ' | grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5]).){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])'", vmid)
-		stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get ip_address method 2")
-		ip_address2 = stdout
-		if ip_address2 != "" {
-			return ip_address2
-		}
+	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null | grep -m 1 '^   ipAddress = ' | grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5]).){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])'", vmid)
+	stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get ip_address method 2")
+	ip_address2 = stdout
+	if ip_address2 != "" {
+		return ip_address2
 	}
 
 	return ""
