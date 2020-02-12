@@ -244,6 +244,9 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			for ovf_extra_config_key, ovf_extra_config_value := range ovf_extra_configs {
 				extra_params = fmt.Sprintf("%s --extraConfig:%s=%s ", extra_params, ovf_extra_config_key, ovf_extra_config_value)
 			}
+		}
+
+		if (extra_params != "") {
 			log.Println("[guestCREATE] ovf_properties extra_params: " + extra_params)
 		}
 
