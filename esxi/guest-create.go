@@ -247,7 +247,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		}
 
 		if (extra_params != "") {
-			log.Println("[guestCREATE] ovf_properties extra_params: " + extra_params)
+			log.Println("[guestCREATE] extra_params: " + extra_params)
 		}
 
 		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false %s "+
