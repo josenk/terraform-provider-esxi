@@ -217,6 +217,26 @@ func resourceGUEST() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"ovf_extra_configs": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: false,
+				ForceNew: true,
+				Default:  nil,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"key": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"value": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+							Computed: false,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -229,8 +249,9 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	var virtual_networks [10][3]string
 	var virtual_disks [60][2]string
 	var src_path string
-	var tmpint, i, virtualDiskCount, ovfPropsCount, guest_shutdown_timeout, ovf_properties_timer int
+	var tmpint, i, virtualDiskCount, ovfPropsCount, ovfExtraConfigs, guest_shutdown_timeout, ovf_properties_timer int
 	var ovf_properties map[string]string
+	var ovf_extra_configs map[string]string
 
 	clone_from_vm := d.Get("clone_from_vm").(string)
 	ovf_source := d.Get("ovf_source").(string)
@@ -386,9 +407,27 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	ovfExtraConfigs, ok = d.Get("ovf_extra_configs.#").(int)
+	if !ok {
+	 	ovfExtraConfigs = 0
+	} else {
+		ovf_extra_configs = make(map[string]string)
+	}
+
+	for i = 0; i < ovfExtraConfigs; i++ {
+		prefix := fmt.Sprintf("ovf_extra_configs.%d.", i)
+
+		if key, ok := d.Get(prefix + "key").(string); ok && key != "" {
+
+			if value, ok := d.Get(prefix + "value").(string); ok && value != "" {
+				ovf_extra_configs[key] = value
+			}
+		}
+	}
+
 	vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
 		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks,
-		virtual_disks, guest_shutdown_timeout, ovf_properties_timer, notes, guestinfo, ovf_properties)
+		virtual_disks, guest_shutdown_timeout, ovf_properties_timer, notes, guestinfo, ovf_properties, ovf_extra_configs)
 	if err != nil {
 		tmpint, _ = strconv.Atoi(vmid)
 		if tmpint > 0 {

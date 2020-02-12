@@ -18,7 +18,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
 	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string,
 	virtual_disks [60][2]string, guest_shutdown_timeout int, ovf_properties_timer int, notes string,
-	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
+	guestinfo map[string]interface{}, ovf_properties map[string]string, ovf_extra_configs map[string]string) (string, error) {
 
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Printf("[guestCREATE]\n")
@@ -229,10 +229,20 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			// in order to process any OVF params, guest should be immediately powered on
 			// This is because the ESXi host doesn't have a cache to store the OVF parameters, like the vCenter Server does.
 			// Therefore, you MUST use the ‘--X:injectOvfEnv’ option with the ‘--poweron’ option
-			extra_params = "--X:injectOvfEnv --allowExtraConfig --powerOn "
+			extra_params = "--X:injectOvfEnv --allowAllExtraConfig --allowExtraConfig --powerOn "
 
 			for ovf_prop_key, ovf_prop_value := range ovf_properties {
-				extra_params = fmt.Sprintf("%s --prop:%s='%s' ", extra_params, ovf_prop_key, ovf_prop_value)
+				extra_params = fmt.Sprintf("%s --prop:%s=%s ", extra_params, ovf_prop_key, ovf_prop_value)
+			}
+		}
+
+		if (len(ovf_extra_configs) > 0) && (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) {
+			if (extra_params == "") {
+				extra_params = "--X:injectOvfEnv --allowAllExtraConfig --allowExtraConfig --powerOn "
+			}
+			
+			for ovf_extra_config_key, ovf_extra_config_value := range ovf_extra_configs {
+				extra_params = fmt.Sprintf("%s --extraConfig:%s=%s ", extra_params, ovf_extra_config_key, ovf_extra_config_value)
 			}
 			log.Println("[guestCREATE] ovf_properties extra_params: " + extra_params)
 		}
@@ -323,6 +333,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			return vmid, fmt.Errorf("[guestCREATE] Failed to shutdown after ovf_properties injection.\n")
 		}
 	}
+
 
 	//
 	//  Grow boot disk to boot_disk_size
