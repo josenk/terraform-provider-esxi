@@ -238,7 +238,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 		if (len(ovf_extra_configs) > 0) && (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) {
 			if (extra_params == "") {
-				extra_params = "--X:injectOvfEnv --allowAllExtraConfig --allowExtraConfig --powerOn "
+				extra_params = "--allowAllExtraConfig --allowExtraConfig "
 			}
 			
 			for ovf_extra_config_key, ovf_extra_config_value := range ovf_extra_configs {
