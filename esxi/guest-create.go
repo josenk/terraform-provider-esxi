@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -122,6 +123,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 				fmt.Sprintf("scsi0.present = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("scsi0.sharedBus = \\\"none\\\"\n") +
 				fmt.Sprintf("scsi0.virtualDev = \\\"lsilogic\\\"\n") +
+				fmt.Sprintf("disk.EnableUUID = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("pciBridge0.present = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("pciBridge4.present = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("pciBridge4.virtualDev = \\\"pcieRootPort\\\"\n") +
@@ -283,7 +285,8 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		//  Execute ovftool script (or batch) here.
 		cmd := exec.Command(osShellCmd, osShellCmdOpt, ovf_cmd)
 
-		log.Printf("[guestCREATE] ovf_cmd: %s\n", ovf_cmd)
+		re := regexp.MustCompile(`vi://.*?@`)
+		log.Printf("[guestCREATE] ovf_cmd: %s\n", re.ReplaceAllString(ovf_cmd, "vi://XXXX:YYYY@"))
 
 		cmd.Stdout = &out
 		err = cmd.Run()

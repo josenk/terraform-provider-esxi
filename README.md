@@ -163,9 +163,9 @@ Configuration reference
 
 
 * resource "esxi_virtual_disk"
-  * virtual_disk_disk_store - Required - esxi Disk Store where guest vm will be created.
-  * virtual_disk_dir - Required - Disk dir.
-  * virtual_disk_name - Optional - Virtual Disk Name. A random virtual disk name will be generated if nil.
+  * virtual_disk_disk_store - Required - esxi Disk Store where virtual disk will be created.
+  * virtual_disk_dir - Required - A subdirectory to contain the virtual disk. (Can be the same as guest_name)
+  * virtual_disk_name - Optional - Virtual Disk Name.  (ext must be .vmdk)
   * virtual_disk_size - Optional - Virtual Disk size in GB. Default 1GB.
   * virtual_disk_type - Optional - Virtual Disk type.  (thin, zeroedthick or eagerzeroedthick) Default 'thin'.
 
@@ -235,6 +235,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.6.3 Mask username/password in debug logs.  Set default, disk.EnableUUID = true.
 * 1.6.2 Fix Defaults for guest_startup_timeout and guest_shutdown_timeout.  Fix IP address detection type2 to always run regardless of guest_startup_timeout value.
 * 1.6.1 Fix some minor refresh bugs, allow http(s) ovf sources.
 * 1.6.0 Add support for ovf_properties for OVF/OVA sources.

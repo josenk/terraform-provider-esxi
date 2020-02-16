@@ -322,6 +322,11 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 		}
 	}
 
+	//  Add disk UUID
+	if !strings.Contains(vmx_contents, "disk.EnableUUID") {
+		vmx_contents = vmx_contents + "\ndisk.EnableUUID = \"TRUE\""
+	}
+
 	//
 	//  Write vmx file to esxi host
 	//
