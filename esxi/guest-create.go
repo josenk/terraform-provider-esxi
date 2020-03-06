@@ -165,7 +165,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "write guest_name.vmx file")
 
 		//  Create boot disk (vmdk)
-		remote_cmd = fmt.Sprintf("vmkfstools -c %sG -d %s %s/%s.vmdk", boot_disk_size, boot_disk_type, fullPATH, guest_name)
+		remote_cmd = fmt.Sprintf("vmkfstools -c %sG -d %s \"%s/%s.vmdk\"", boot_disk_size, boot_disk_type, fullPATH, guest_name)
 		_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmkfstools (make boot disk)")
 		if err != nil {
 			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)

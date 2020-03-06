@@ -21,7 +21,7 @@ func diskStoreValidate(c *Config, disk_store string) error {
 	//
 	//  Check if Disk Store already exists
 	//
-	remote_cmd = fmt.Sprintf("esxcli storage filesystem list | grep '/vmfs/volumes/.*[VMFS|NFS]' | awk '{print $2}'")
+	remote_cmd = fmt.Sprintf("esxcli storage filesystem list | grep '/vmfs/volumes/.*[VMFS|NFS]' |awk '{for(i=2;i<=NF-5;++i)printf $i\" \" ; printf \"\\n\"}'")
 	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get list of disk stores")
 	if err != nil {
 		return fmt.Errorf("Unable to get list of disk stores: %s\n", err)
@@ -32,7 +32,7 @@ func diskStoreValidate(c *Config, disk_store string) error {
 		remote_cmd = fmt.Sprintf("esxcli storage filesystem rescan")
 		_, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Refresh filesystems")
 
-		remote_cmd = fmt.Sprintf("esxcli storage filesystem list | grep '/vmfs/volumes/.*[VMFS|NFS]' | awk '{print $2}'")
+		remote_cmd = fmt.Sprintf("esxcli storage filesystem list | grep '/vmfs/volumes/.*[VMFS|NFS]' |awk '{for(i=2;i<=NF-5;++i)printf $i\" \" ; printf \"\\n\"}'")
 		stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get list of disk stores")
 		if err != nil {
 			return fmt.Errorf("Unable to get list of disk stores: %s\n", err)
@@ -175,13 +175,13 @@ func virtualDiskREAD(c *Config, virtdisk_id string) (string, string, string, int
 	virtual_disk_size = int(flatSizei64 / 1024 / 1024 / 1024)
 
 	// Determine virtual disk type  (only works if Guest is powered off)
-	remote_cmd = fmt.Sprintf("vmkfstools -t0 %s |grep -q 'VMFS Z- LVID:' && echo true", virtdisk_id)
+	remote_cmd = fmt.Sprintf("vmkfstools -t0 \"%s\" |grep -q 'VMFS Z- LVID:' && echo true", virtdisk_id)
 	isZeroedThick, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get disk type.  Is zeroedthick.")
 
-	remote_cmd = fmt.Sprintf("vmkfstools -t0 %s |grep -q 'VMFS -- LVID:' && echo true", virtdisk_id)
+	remote_cmd = fmt.Sprintf("vmkfstools -t0 \"%s\" |grep -q 'VMFS -- LVID:' && echo true", virtdisk_id)
 	isEagerZeroedThick, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get disk type.  Is eagerzeroedthick.")
 
-	remote_cmd = fmt.Sprintf("vmkfstools -t0 %s |grep -q 'NOMP -- :' && echo true", virtdisk_id)
+	remote_cmd = fmt.Sprintf("vmkfstools -t0 \"%s\" |grep -q 'NOMP -- :' && echo true", virtdisk_id)
 	isThin, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get disk type.  Is thin.")
 
 	if isThin == "true" {

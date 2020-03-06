@@ -20,7 +20,7 @@ func resourceVIRTUALDISKDelete(d *schema.ResourceData, m interface{}) error {
 	virtual_disk_dir := d.Get("virtual_disk_dir").(string)
 
 	//  Destroy virtual disk.
-	remote_cmd = fmt.Sprintf("/bin/vmkfstools -U %s", virtdisk_id)
+	remote_cmd = fmt.Sprintf("/bin/vmkfstools -U \"%s\"", virtdisk_id)
 	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "destroy virtual disk")
 	if err != nil {
 		if strings.Contains(err.Error(), "Process exited with status 255") == true {

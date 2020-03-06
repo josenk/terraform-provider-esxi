@@ -235,6 +235,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.6.4 Fix default IP dection. Fix Disk Stores containing spaces.
 * 1.6.3 Mask username/password in debug logs.  Set default, disk.EnableUUID = true.
 * 1.6.2 Fix Defaults for guest_startup_timeout and guest_shutdown_timeout.  Fix IP address detection type2 to always run regardless of guest_startup_timeout value.
 * 1.6.1 Fix some minor refresh bugs, allow http(s) ovf sources.

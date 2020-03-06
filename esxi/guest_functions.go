@@ -472,7 +472,7 @@ func guestGetIpAddress(c *Config, vmid string, guest_startup_timeout int) string
 	uptime = 0
 	for uptime < guest_startup_timeout {
 		//  Primary method to get IP
-		remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null |grep -A 5 'deviceConfigId = 4000' |tail -1|grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5]).){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])'", vmid)
+		remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null |sed '1!G;h;$!d' |awk '/deviceConfigId = 4000/,/ipAddress/' |grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\\.){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])' |tail -1", vmid)
 		stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get ip_address method 1")
 		ip_address = stdout
 		if ip_address != "" {
@@ -493,7 +493,7 @@ func guestGetIpAddress(c *Config, vmid string, guest_startup_timeout int) string
 	//
 	// Alternate method to get IP
 	//
-	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null | grep -m 1 '^   ipAddress = ' | grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5]).){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])'", vmid)
+	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null | grep -m 1 '^   ipAddress = ' | grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\\.){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])'", vmid)
 	stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get ip_address method 2")
 	ip_address2 = stdout
 	if ip_address2 != "" {
