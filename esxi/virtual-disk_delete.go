@@ -2,9 +2,10 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"strings"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceVIRTUALDISKDelete(d *schema.ResourceData, m interface{}) error {
