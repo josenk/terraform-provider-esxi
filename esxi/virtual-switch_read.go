@@ -10,13 +10,14 @@ func resourceVirtualSwitchRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
 	log.Println("[resourceVirtualSwitchRead]")
 
-	_, err := virtualSwitchRead(c, d.Id())
+	virtual_switch_name, err := virtualSwitchRead(c, d.Id())
 	if err != nil {
 		d.SetId("")
-		return nil
+		log.Println("[resourceVirtualSwitchRead] Error: %s", err.Error())
+		return err
 	}
 
-	d.Set("virtual_switch_name", d.Id())
+	d.Set("virtual_switch_name", virtual_switch_name)
 
 	return nil
 }

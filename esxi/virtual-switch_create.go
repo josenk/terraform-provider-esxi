@@ -16,12 +16,11 @@ func resourceVirtualSwitchCreate(d *schema.ResourceData, m interface{}) error {
 
 	if virtual_switch_name == "" {
 		return errors.New("Virtual Switch Name must not be blank")
-
 	}
 
-	err := virtualSwitchCreate(c, virtual_switch_name)
+	virtual_switch_id, err := virtualSwitchCreate(c, virtual_switch_name)
 	if err == nil {
-		d.SetId(virtual_switch_name)
+		d.SetId(virtual_switch_id)
 	} else {
 		log.Println("[resourceVirtualSwitchCreate] Error: " + err.Error())
 		d.SetId("")

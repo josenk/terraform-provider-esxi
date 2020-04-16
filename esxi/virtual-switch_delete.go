@@ -15,9 +15,9 @@ func resourceVirtualSwitchDelete(d *schema.ResourceData, m interface{}) error {
 	var remote_cmd, cmd_result string
 	var err error
 
-	virtual_switch_name := d.Id()
+	virtual_switch_name := d.Get("virtual_switch_name").(string)
 
-	remote_cmd = fmt.Sprintf("esxcfg-vswitch -d \"%s\"", virtual_switch_name)
+	remote_cmd = fmt.Sprintf(`vim-cmd hostsvc/net/vswitch_remove "%s"`, virtual_switch_name)
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "destroy virtual switch")
 
 	if err != nil {
