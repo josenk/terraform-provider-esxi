@@ -26,7 +26,7 @@ func virtualSwitchCreate(c *Config, virtual_switch_name string) (string, error) 
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create virtual switch")
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to create virtual switch: %w", err)
+		return "", fmt.Errorf("Unable to create virtual switch: %s", err)
 	}
 
 	if cmd_result != "" {
@@ -37,7 +37,7 @@ func virtualSwitchCreate(c *Config, virtual_switch_name string) (string, error) 
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate virtual switch exists")
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to validate virtual switch: %w", err)
+		return "", fmt.Errorf("Unable to validate virtual switch: %s", err)
 	}
 
 	regex_output := r.FindStringSubmatch(cmd_result)
@@ -67,7 +67,7 @@ func virtualSwitchRead(c *Config, virtual_switch_id string) (string, error) {
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate virtual switch exists")
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to validate virtual switch: %w", err)
+		return "", fmt.Errorf("Unable to validate virtual switch: %s", err)
 	}
 
 	if cmd_result == "Not found." {
@@ -89,7 +89,7 @@ func virtualSwitchReadID(c *Config, virtual_switch_name string) (string, error) 
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate virtual switch exists")
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to validate virtual switch: %w", err)
+		return "", fmt.Errorf("Unable to validate virtual switch: %s", err)
 	}
 
 	if cmd_result == "Not found." {
