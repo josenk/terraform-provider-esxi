@@ -27,7 +27,7 @@ func resourcePortGroupCreate(d *schema.ResourceData, m interface{}) error {
 	_, err := virtualSwitchRead(c, virtual_switch_id)
 	if err != nil {
 		d.SetId("")
-		return fmt.Errorf("Failed to validate virtual_switch: %w", err)
+		return fmt.Errorf("Failed to validate virtual_switch: %s", err)
 	}
 
 	port_group_id, err := portGroupCreate(c, virtual_switch_id, port_group_name)

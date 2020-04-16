@@ -21,7 +21,7 @@ func resourceVirtualSwitchDelete(d *schema.ResourceData, m interface{}) error {
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "destroy virtual switch")
 
 	if err != nil {
-		return fmt.Errorf("Unable to destroy virtual switch: %w", err)
+		return fmt.Errorf("Unable to destroy virtual switch: %s", err)
 	}
 
 	if cmd_result != "" {

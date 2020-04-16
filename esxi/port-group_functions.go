@@ -26,7 +26,7 @@ func portGroupCreate(c *Config, virtual_switch_id string, port_group_name string
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate port group does not exist")
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to validate port group: %w", err)
+		return "", fmt.Errorf("Unable to validate port group: %s", err)
 	}
 
 	if cmd_result == "1" {
@@ -37,7 +37,7 @@ func portGroupCreate(c *Config, virtual_switch_id string, port_group_name string
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create port group")
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to create port group: %w", err)
+		return "", fmt.Errorf("Unable to create port group: %s", err)
 	}
 
 	if cmd_result != "" {
@@ -48,7 +48,7 @@ func portGroupCreate(c *Config, virtual_switch_id string, port_group_name string
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate port group exists")
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to validate port group: %w", err)
+		return "", fmt.Errorf("Unable to validate port group: %s", err)
 	}
 
 	regex_output := r.FindStringSubmatch(cmd_result)
@@ -79,7 +79,7 @@ func portGroupRead(c *Config, virtual_switch_id string) (string, string, error) 
 	cmd_result, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "validate port group exists")
 
 	if err != nil {
-		return "", "", fmt.Errorf("Unable to validate port group: %w", err)
+		return "", "", fmt.Errorf("Unable to validate port group: %s", err)
 	}
 
 	regex_output := r.FindStringSubmatch(cmd_result)
