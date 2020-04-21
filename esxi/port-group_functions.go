@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 )
 
 var port_group_prefix = `key-vim.host.PortGroup-`
@@ -51,22 +52,34 @@ func portGroupCreate(c *Config, virtual_switch_id string, port_group_name string
 		return "", fmt.Errorf("Unable to validate port group: %s", err)
 	}
 
-	regex_output := r.FindStringSubmatch(cmd_result)
+	regex_output := r.FindAllStringSubmatch(cmd_result, -1)
 
-	if regex_output == nil || len(regex_output) < 2 {
+	if regex_output == nil || len(regex_output) < 1 {
 		return "", fmt.Errorf("Unable to retrieve port group id from 'vim-cmd hostsvc/net/vswitch_info' output")
 	}
 
-	port_group_id := regex_output[1]
+	found := false
+	var errstrings []string
 
-	if port_group_id != expected_port_group_id {
-		return "", fmt.Errorf("Unable to validate port group: Expected port group id '%s' Actual port group id '%s'", expected_port_group_id, port_group_id)
+	for _, match := range regex_output {
+
+		port_group_id := match[1]
+
+		if port_group_id == expected_port_group_id {
+			found = true
+		}
+
+		errstrings = append(errstrings, fmt.Errorf("Unable to validate port group: Expected port group id '%s' Actual port group id '%s'", expected_port_group_id, port_group_id).Error())
 	}
 
-	return port_group_id, nil
+	if !found {
+		return "", fmt.Errorf(strings.Join(errstrings, " "))
+	}
+
+	return expected_port_group_id, nil
 }
 
-func portGroupRead(c *Config, virtual_switch_id string) (string, string, error) {
+func portGroupRead(c *Config, port_group_name string, virtual_switch_id string) (string, string, error) {
 
 	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Println("[portGroupRead] Begin")
@@ -82,13 +95,13 @@ func portGroupRead(c *Config, virtual_switch_id string) (string, string, error) 
 		return "", "", fmt.Errorf("Unable to validate port group: %s", err)
 	}
 
-	regex_output := r.FindStringSubmatch(cmd_result)
+	regex_output := r.FindAllStringSubmatch(cmd_result, -1)
 
-	if regex_output == nil || len(regex_output) < 2 {
+	if regex_output == nil || len(regex_output) < 1 {
 		return "", "", fmt.Errorf("Unable to retrieve port group id from 'vim-cmd hostsvc/net/vswitch_info' output")
 	}
 
-	port_group_id := regex_output[1]
+	// port_group_id := regex_output[1]
 
-	return getVirtualSwitchName(virtual_switch_id), getPortGroupName(port_group_id), nil
+	return getVirtualSwitchName(virtual_switch_id), port_group_name, nil
 }
