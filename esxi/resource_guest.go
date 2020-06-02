@@ -3,11 +3,12 @@ package esxi
 import (
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 	"log"
 	"net/url"
 	"strconv"
+
+	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceGUEST() *schema.Resource {
@@ -276,7 +277,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 
 	if clone_from_vm != "" {
 		password := url.QueryEscape(c.esxiPassword)
-		src_path = fmt.Sprintf("vi://%s:%s@%s/%s", c.esxiUserName, password, c.esxiHostName, clone_from_vm)
+		src_path = fmt.Sprintf("vi://%s:%s@%s:%s/%s", c.esxiUserName, password, c.esxiHostName, c.esxiHostSSLport, clone_from_vm)
 	} else if ovf_source != "" {
 		src_path = ovf_source
 	} else {

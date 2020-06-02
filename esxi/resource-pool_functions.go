@@ -12,7 +12,7 @@ import (
 
 //  Check if Pool exists (by name )and return it's Pool ID.
 func getPoolID(c *Config, resource_pool_name string) (string, error) {
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
 	log.Printf("[getPoolID]\n")
 
 	if resource_pool_name == "/" || resource_pool_name == "Resources" {
@@ -24,7 +24,7 @@ func getPoolID(c *Config, resource_pool_name string) (string, error) {
 
 	r := strings.NewReplacer("objID>", "", "</objID", "")
 	remote_cmd := fmt.Sprintf("grep -A1 '<name>%s</name>' /etc/vmware/hostd/pools.xml | grep -o objID.*objID | tail -1", resource_pool_name)
-	stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get existing resource pool id")
+	stdout, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "get existing resource pool id")
 	if err == nil {
 		stdout = r.Replace(stdout)
 		return stdout, err
@@ -36,7 +36,7 @@ func getPoolID(c *Config, resource_pool_name string) (string, error) {
 
 //  Check if Pool exists (by id)and return it's Pool name.
 func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
 	log.Printf("[getPoolNAME]\n")
 
 	var ResourcePoolName, fullResourcePoolName string
@@ -49,7 +49,7 @@ func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
 
 	// Get full Resource Pool Path
 	remote_cmd := fmt.Sprintf("grep -A1 '<objID>%s</objID>' /etc/vmware/hostd/pools.xml | grep '<path>'", resource_pool_id)
-	stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get resource pool path")
+	stdout, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "get resource pool path")
 	if err != nil {
 		log.Printf("[getPoolNAME] Failed get resource pool PATH: %s\n", stdout)
 		return "", err
@@ -65,7 +65,7 @@ func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
 
 			r := strings.NewReplacer("name>", "", "</name", "")
 			remote_cmd := fmt.Sprintf("grep -B1 '<objID>%s</objID>' /etc/vmware/hostd/pools.xml | grep -o name.*name", result[i])
-			stdout, _ := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get resource pool name")
+			stdout, _ := runRemoteSshCommand(esxiConnInfo, remote_cmd, "get resource pool name")
 			ResourcePoolName = r.Replace(stdout)
 
 			if ResourcePoolName != "" {
@@ -82,7 +82,7 @@ func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
 }
 
 func resourcePoolRead(c *Config, pool_id string) (string, int, string, int, string, int, string, int, string, error) {
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
 	log.Println("[resourcePoolRead]")
 
 	var remote_cmd, stdout, cpu_shares, mem_shares string
@@ -91,7 +91,7 @@ func resourcePoolRead(c *Config, pool_id string) (string, int, string, int, stri
 	var err error
 
 	remote_cmd = fmt.Sprintf("vim-cmd hostsvc/rsrc/pool_config_get %s", pool_id)
-	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "resource pool_config_get")
+	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "resource pool_config_get")
 
 	if strings.Contains(stdout, "deleted") == true {
 		log.Printf("[resourcePoolRead] Already deleted: %s\n", err)

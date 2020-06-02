@@ -2,15 +2,16 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
 	log.Println("[resourceRESOURCEPOOLCreate]")
 
 	var remote_cmd string
@@ -108,7 +109,7 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 		cpu_min_opt, cpu_min_expandable_opt, cpu_max_opt, cpu_shares_opt,
 		mem_min_opt, mem_min_expandable_opt, mem_max_opt, mem_shares_opt, parent_pool_id, resource_pool_name)
 
-	_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create resource pool")
+	_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "create resource pool")
 	pool_id, _ = getPoolID(c, resource_pool_name)
 	if err != nil {
 		d.SetId("")

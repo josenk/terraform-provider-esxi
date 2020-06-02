@@ -2,15 +2,16 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceVIRTUALDISKCreate(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
-	//esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	//esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
 	log.Println("[resourceVIRTUALDISKCreate]")
 
 	virtual_disk_disk_store := d.Get("virtual_disk_disk_store").(string)
