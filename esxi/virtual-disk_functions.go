@@ -12,7 +12,7 @@ import (
 //  Validate Disk Store
 //
 func diskStoreValidate(c *Config, disk_store string) error {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[diskStoreValidate]\n")
 
 	var remote_cmd, stdout string
@@ -51,7 +51,7 @@ func diskStoreValidate(c *Config, disk_store string) error {
 //
 func virtualDiskCREATE(c *Config, virtual_disk_disk_store string, virtual_disk_dir string,
 	virtual_disk_name string, virtual_disk_size int, virtual_disk_type string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[virtualDiskCREATE]")
 
 	var virtdisk_id, remote_cmd string
@@ -106,7 +106,7 @@ func virtualDiskCREATE(c *Config, virtual_disk_disk_store string, virtual_disk_d
 //  Grow virtual Disk
 //
 func growVirtualDisk(c *Config, virtdisk_id string, virtdisk_size string) error {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[growVirtualDisk]\n")
 
 	var newDiskSize int
@@ -132,7 +132,7 @@ func growVirtualDisk(c *Config, virtdisk_id string, virtdisk_size string) error 
 //  Read virtual Disk details
 //
 func virtualDiskREAD(c *Config, virtdisk_id string) (string, string, string, int, string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[virtualDiskREAD] Begin")
 
 	var virtual_disk_disk_store, virtual_disk_dir, virtual_disk_name string

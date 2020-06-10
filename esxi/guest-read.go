@@ -84,7 +84,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [10][3]string, [60][2]string, string, string, map[string]interface{}, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[guestREAD]")
 
 	var guest_name, disk_store, virtual_disk_type, resource_pool_name, guestos, ip_address, notes string

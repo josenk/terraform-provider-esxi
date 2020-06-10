@@ -11,7 +11,7 @@ import (
 
 func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[resourceRESOURCEPOOLCreate]")
 
 	var remote_cmd string

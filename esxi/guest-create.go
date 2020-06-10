@@ -21,7 +21,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	virtual_disks [60][2]string, guest_shutdown_timeout int, ovf_properties_timer int, notes string,
 	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
 
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestCREATE]\n")
 
 	var memsize, numvcpus, virthwver int

@@ -14,7 +14,7 @@ type Config struct {
 }
 
 func (c *Config) validateEsxiCreds() error {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[validateEsxiCreds]\n")
 
 	var remote_cmd string

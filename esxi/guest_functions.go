@@ -10,7 +10,7 @@ import (
 )
 
 func guestGetVMID(c *Config, guest_name string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestGetVMID]\n")
 
 	var remote_cmd, vmid string
@@ -31,7 +31,7 @@ func guestGetVMID(c *Config, guest_name string) (string, error) {
 }
 
 func guestValidateVMID(c *Config, vmid string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestValidateVMID]\n")
 
 	var remote_cmd string
@@ -51,7 +51,7 @@ func guestValidateVMID(c *Config, vmid string) (string, error) {
 }
 
 func getBootDiskPath(c *Config, vmid string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[getBootDiskPath]\n")
 
 	var remote_cmd, stdout string
@@ -69,7 +69,7 @@ func getBootDiskPath(c *Config, vmid string) (string, error) {
 }
 
 func getDst_vmx_file(c *Config, vmid string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[getDst_vmx_file]\n")
 
 	var dst_vmx_ds, dst_vmx, dst_vmx_file string
@@ -90,7 +90,7 @@ func getDst_vmx_file(c *Config, vmid string) (string, error) {
 }
 
 func readVmx_contents(c *Config, vmid string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[getVmx_contents]\n")
 
 	var remote_cmd, vmx_contents string
@@ -106,7 +106,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	virthwver int, guestos string, virtual_networks [10][3]string, virtual_disks [60][2]string, notes string,
 	guestinfo map[string]interface{}) error {
 
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[updateVmx_contents]\n")
 
 	var regexReplacement, remote_cmd string
@@ -342,7 +342,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 }
 
 func cleanStorageFromVmx(c *Config, vmid string) error {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[cleanStorageFromVmx]\n")
 
 	var remote_cmd string
@@ -377,7 +377,7 @@ func cleanStorageFromVmx(c *Config, vmid string) error {
 }
 
 func guestPowerOn(c *Config, vmid string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestPowerOn]\n")
 
 	if guestPowerGetState(c, vmid) == "on" {
@@ -396,7 +396,7 @@ func guestPowerOn(c *Config, vmid string) (string, error) {
 }
 
 func guestPowerOff(c *Config, vmid string, guest_shutdown_timeout int) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestPowerOff]\n")
 
 	var remote_cmd, stdout string
@@ -434,7 +434,7 @@ func guestPowerOff(c *Config, vmid string, guest_shutdown_timeout int) (string, 
 }
 
 func guestPowerGetState(c *Config, vmid string) string {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestPowerGetState]\n")
 
 	remote_cmd := fmt.Sprintf("vim-cmd vmsvc/power.getstate %s", vmid)
@@ -455,7 +455,7 @@ func guestPowerGetState(c *Config, vmid string) string {
 }
 
 func guestGetIpAddress(c *Config, vmid string, guest_startup_timeout int) string {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestGetIpAddress]\n")
 
 	var remote_cmd, stdout, ip_address, ip_address2 string

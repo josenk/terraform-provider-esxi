@@ -12,7 +12,7 @@ import (
 
 //  Check if Pool exists (by name )and return it's Pool ID.
 func getPoolID(c *Config, resource_pool_name string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[getPoolID]\n")
 
 	if resource_pool_name == "/" || resource_pool_name == "Resources" {
@@ -36,7 +36,7 @@ func getPoolID(c *Config, resource_pool_name string) (string, error) {
 
 //  Check if Pool exists (by id)and return it's Pool name.
 func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[getPoolNAME]\n")
 
 	var ResourcePoolName, fullResourcePoolName string
@@ -82,7 +82,7 @@ func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
 }
 
 func resourcePoolRead(c *Config, pool_id string) (string, int, string, int, string, int, string, int, string, error) {
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[resourcePoolRead]")
 
 	var remote_cmd, stdout, cpu_shares, mem_shares string

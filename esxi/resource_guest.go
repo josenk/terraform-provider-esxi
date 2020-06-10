@@ -28,6 +28,13 @@ func resourceGUEST() *schema.Resource {
 				DefaultFunc: schema.EnvDefaultFunc("clone_from_vm", nil),
 				Description: "Source vm path on esxi host to clone.",
 			},
+			"host_ovf": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				DefaultFunc: schema.EnvDefaultFunc("host_ovf", nil),
+				Description: "Path on exsi host of ovf files.",
+			},
 			"ovf_source": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,

@@ -10,7 +10,7 @@ import (
 
 func resourceVIRTUALDISKDelete(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
-	esxiConnInfo := ConnectionStruct{c.esxiHostName, c.esxiHostSSHport, c.esxiHostSSLport, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[resourceVIRTUALDISKDelete]")
 
 	var remote_cmd, stdout string
