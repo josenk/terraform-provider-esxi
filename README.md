@@ -113,6 +113,7 @@ terraform {
 provider "esxi" {
   esxi_hostname      = "esxi"
   esxi_hostport      = "22"
+  esxi_hostssl       = "443"
   esxi_username      = "root"
   esxi_password      = "MyPassword"
 }
@@ -146,6 +147,7 @@ Configuration reference
 * provider "esxi"
   * esxi_hostname - Required
   * esxi_hostport - Optional - Default "22".
+  * esxi_hostssl - Optional - Default "443".
   * esxi_username - Optional - Default "root".
   * esxi_password - Required
 

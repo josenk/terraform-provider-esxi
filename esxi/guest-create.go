@@ -21,7 +21,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	virtual_disks [60][2]string, guest_shutdown_timeout int, ovf_properties_timer int, notes string,
 	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
 
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[guestCREATE]\n")
 
 	var memsize, numvcpus, virthwver int
@@ -73,17 +73,17 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		boot_disk_vmdkPATH = fmt.Sprintf("\"/vmfs/volumes/%s/%s/%s.vmdk\"", disk_store, guest_name, guest_name)
 
 		remote_cmd = fmt.Sprintf("ls -d %s", boot_disk_vmdkPATH)
-		stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if guest path already exists.")
+		stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "check if guest path already exists.")
 		if strings.Contains(stdout, "No such file or directory") != true {
 			fmt.Printf("Error: Guest may already exists. vmdkPATH:%s\n", boot_disk_vmdkPATH)
 			return "", fmt.Errorf("Guest may already exists. vmdkPATH:%s\n", boot_disk_vmdkPATH)
 		}
 
 		remote_cmd = fmt.Sprintf("ls -d %s", fullPATH)
-		stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if guest path already exists.")
+		stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "check if guest path already exists.")
 		if strings.Contains(stdout, "No such file or directory") == true {
 			remote_cmd = fmt.Sprintf("mkdir %s", fullPATH)
-			stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "create guest path")
+			stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "create guest path")
 			if err != nil {
 				log.Printf("[guestCREATE] Failed to create guest path. fullPATH:%s\n", fullPATH)
 				return "", fmt.Errorf("Failed to create guest path. fullPATH:%s\n", fullPATH)
@@ -162,14 +162,14 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		dst_vmx_file := fmt.Sprintf("%s/%s.vmx", fullPATH, guest_name)
 
 		remote_cmd = fmt.Sprintf("echo \"%s\" >%s", vmx_contents, dst_vmx_file)
-		vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "write guest_name.vmx file")
+		vmx_contents, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "write guest_name.vmx file")
 
 		//  Create boot disk (vmdk)
 		remote_cmd = fmt.Sprintf("vmkfstools -c %sG -d %s \"%s/%s.vmdk\"", boot_disk_size, boot_disk_type, fullPATH, guest_name)
-		_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmkfstools (make boot disk)")
+		_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmkfstools (make boot disk)")
 		if err != nil {
 			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
-			stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "cleanup guest path because of failed events")
+			stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "cleanup guest path because of failed events")
 			log.Printf("[guestCREATE] Failed to vmkfstools (make boot disk):%s\n", err.Error())
 			return "", fmt.Errorf("Failed to vmkfstools (make boot disk):%s\n", err.Error())
 		}
@@ -181,11 +181,11 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			return "", fmt.Errorf("Failed to use Resource Pool ID:%s\n", poolID)
 		}
 		remote_cmd = fmt.Sprintf("vim-cmd solo/registervm %s %s %s", dst_vmx_file, guest_name, poolID)
-		_, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "solo/registervm")
+		_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "solo/registervm")
 		if err != nil {
 			log.Printf("[guestCREATE] Failed to register guest:%s\n", err.Error())
 			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
-			stdout, _ = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "cleanup guest path because of failed events")
+			stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "cleanup guest path because of failed events")
 			return "", fmt.Errorf("Failed to register guest:%s\n", err.Error())
 		}
 
@@ -218,7 +218,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			boot_disk_type = "thick"
 		}
 		password := url.QueryEscape(c.esxiPassword)
-		dst_path := fmt.Sprintf("vi://%s:%s@%s/%s", c.esxiUserName, password, c.esxiHostName, resource_pool_name)
+		dst_path := fmt.Sprintf("vi://%s:%s@%s:%s/%s", c.esxiUserName, password, c.esxiHostName, c.esxiHostSSLport, resource_pool_name)
 
 		net_param := ""
 		if (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) && virtual_networks[0][0] != "" {

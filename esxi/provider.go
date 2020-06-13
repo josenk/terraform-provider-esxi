@@ -2,10 +2,11 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
 	"log"
 	"os"
+
+	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/terraform"
 )
 
 func init() {
@@ -29,6 +30,12 @@ func Provider() terraform.ResourceProvider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("esxi_hostport", "22"),
 				Description: "ssh port.",
+			},
+			"esxi_hostssl": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("exsi_hostssl", "443"),
+				Description: "ssl port.",
 			},
 			"esxi_username": &schema.Schema{
 				Type:        schema.TypeString,
@@ -54,10 +61,11 @@ func Provider() terraform.ResourceProvider {
 
 func configureProvider(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		esxiHostName: d.Get("esxi_hostname").(string),
-		esxiHostPort: d.Get("esxi_hostport").(string),
-		esxiUserName: d.Get("esxi_username").(string),
-		esxiPassword: d.Get("esxi_password").(string),
+		esxiHostName:    d.Get("esxi_hostname").(string),
+		esxiHostSSHport: d.Get("esxi_hostport").(string),
+		esxiHostSSLport: d.Get("esxi_hostssl").(string),
+		esxiUserName:    d.Get("esxi_username").(string),
+		esxiPassword:    d.Get("esxi_password").(string),
 	}
 
 	if err := config.validateEsxiCreds(); err != nil {

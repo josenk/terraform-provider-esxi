@@ -2,15 +2,16 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceRESOURCEPOOLUpdate(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[resourceRESOURCEPOOLUpdate]")
 
 	var remote_cmd, stdout string
@@ -41,7 +42,7 @@ func resourceRESOURCEPOOLUpdate(d *schema.ResourceData, m interface{}) error {
 	if stdout != resource_pool_name {
 		log.Printf("[resourceRESOURCEPOOLUpdate] rename %s %s", pool_id, resource_pool_name)
 		remote_cmd = fmt.Sprintf("vim-cmd hostsvc/rsrc/rename %s %s", pool_id, resource_pool_name)
-		stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "update resource pool")
+		stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "update resource pool")
 		if err != nil {
 			return err
 		}
@@ -101,7 +102,7 @@ func resourceRESOURCEPOOLUpdate(d *schema.ResourceData, m interface{}) error {
 		cpu_min_opt, cpu_min_expandable_opt, cpu_max_opt, cpu_shares_opt,
 		mem_min_opt, mem_min_expandable_opt, mem_max_opt, mem_shares_opt, pool_id)
 
-	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "update resource pool")
+	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "update resource pool")
 	log.Printf("[resourcePoolUPDATE] stdout |%s|\n", stdout)
 
 	r := strings.NewReplacer("'vim.ResourcePool:", "", "'", "")

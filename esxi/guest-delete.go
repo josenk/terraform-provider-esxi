@@ -2,14 +2,15 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"time"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[resourceGUESTDelete]")
 
 	var remote_cmd, stdout string
@@ -31,7 +32,7 @@ func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 
 	time.Sleep(5 * time.Second)
 	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/destroy %s", vmid)
-	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "vmsvc/destroy")
+	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmsvc/destroy")
 	if err != nil {
 		// todo more descriptive err message
 		log.Printf("[resourceGUESTDelete] Failed destroy vmid: %s\n", stdout)

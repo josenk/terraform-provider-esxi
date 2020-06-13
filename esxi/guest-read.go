@@ -3,11 +3,12 @@ package esxi
 import (
 	"bufio"
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
@@ -83,7 +84,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [10][3]string, [60][2]string, string, string, map[string]interface{}, error) {
-	esxiSSHinfo := SshConnectionStruct{c.esxiHostName, c.esxiHostPort, c.esxiUserName, c.esxiPassword}
+	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[guestREAD]")
 
 	var guest_name, disk_store, virtual_disk_type, resource_pool_name, guestos, ip_address, notes string
@@ -97,7 +98,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	r, _ := regexp.Compile("")
 
 	remote_cmd := fmt.Sprintf("vim-cmd  vmsvc/get.summary %s", vmid)
-	stdout, err := runRemoteSshCommand(esxiSSHinfo, remote_cmd, "Get Guest summary")
+	stdout, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "Get Guest summary")
 
 	if strings.Contains(stdout, "Unable to find a VM corresponding") {
 		return "", "", "", "", "", "", "", "", "", "", virtual_networks, virtual_disks, "", "", nil, nil
@@ -121,7 +122,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 
 	//  Get resource pool that this VM is located
 	remote_cmd = fmt.Sprintf(`grep -A2 'objID>%s</objID' /etc/vmware/hostd/pools.xml | grep -o resourcePool.*resourcePool`, vmid)
-	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "check if guest is in resource pool")
+	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "check if guest is in resource pool")
 	nr := strings.NewReplacer("resourcePool>", "", "</resourcePool", "")
 	vm_resource_pool_id := nr.Replace(stdout)
 	log.Printf("[GuestRead] resource_pool_name|%s| scanner.Text():|%s|\n", vm_resource_pool_id, stdout)
@@ -133,13 +134,13 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	//
 	//      -Get location of vmx file on esxi host
 	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.config %s | grep vmPathName|grep -oE \"\\[.*\\]\"", vmid)
-	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get dst_vmx_ds")
+	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "get dst_vmx_ds")
 	dst_vmx_ds = stdout
 	dst_vmx_ds = strings.Trim(dst_vmx_ds, "[")
 	dst_vmx_ds = strings.Trim(dst_vmx_ds, "]")
 
 	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.config %s | grep vmPathName|awk '{print $NF}'|sed 's/[\"|,]//g'", vmid)
-	stdout, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "get dst_vmx")
+	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "get dst_vmx")
 	dst_vmx = stdout
 
 	dst_vmx_file = "/vmfs/volumes/" + dst_vmx_ds + "/" + dst_vmx
@@ -148,7 +149,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	log.Printf("[guestREAD] disk_store: %s  dst_vmx_ds:%s\n", disk_store, dst_vmx_file)
 
 	remote_cmd = fmt.Sprintf("cat \"%s\"", dst_vmx_file)
-	vmx_contents, err = runRemoteSshCommand(esxiSSHinfo, remote_cmd, "read guest_name.vmx file")
+	vmx_contents, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "read guest_name.vmx file")
 
 	// Used to keep track if a network interface is using static or generated macs.
 	var isGeneratedMAC [10]bool
