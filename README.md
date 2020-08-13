@@ -237,6 +237,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.7.1 Bump release to include support for Terraform 0.13
 * 1.7.0 Add support for esxi_hostssl (Setting the ssl port for ovftool).
 * 1.6.4 Fix default IP dection. Fix Disk Stores containing spaces.
 * 1.6.3 Mask username/password in debug logs.  Set default, disk.EnableUUID = true.
