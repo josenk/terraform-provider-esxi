@@ -20,6 +20,7 @@ Requirements
 
 Building The Provider
 ---------------------
+In general, you don't normally need to build the provider.  A release can be downloaded from github, or can automatically be downloaded with terraform 0.13.
 
 You first must set your GOPATH.   If you are unsure, please review the documentation at.
 >https://github.com/golang/go/wiki/SettingGOPATH
@@ -42,6 +43,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w -extldflags "-sta
 sudo cp terraform-provider-esxi_`cat version` /usr/local/bin
 ```
 
+
 Terraform-provider-esxi plugin
 ==============================
 * This is a Terraform plugin that adds a VMware ESXi provider support.  This allows Terraform to control and provision VMs directly on an ESXi hypervisor without a need for vCenter or VShpere.   ESXi hypervisor is a free download from VMware!
@@ -54,14 +56,10 @@ Terraform-provider-esxi plugin
 >https://configmax.vmware.com/guest
 
 
-
-
 What's New:
 -----------
-* Terraform can import existing Guest VMs, Virtual Disks & Resource pools by name. See wiki page for more info.
->https://github.com/josenk/terraform-provider-esxi/wiki/How-to-import
-* Added support for GuestInfo.  (Thanks for the contribution silasb.)
-  * This adds great provisioning options like Ignition and Cloud-Init!
+* Terraform 0.13 support.  This provider is now in the terraform registry.
+>https://registry.terraform.io/providers/josenk/esxi
 
 
 
@@ -73,6 +71,7 @@ Features and Compatibility
 * Terraform will Create, Destroy, Update & Read Guest VMs.
 * Terraform will Create, Destroy, Update & Read Extra Storage for Guests.
 
+
 This is a provider!  NOT a provisioner.
 ---------------------------------------
 * This plugin does not configure your guest VM, it creates it.
@@ -80,6 +79,7 @@ This is a provider!  NOT a provisioner.
   * Refer to Hashicorp list of provisioners: https://www.terraform.io/docs/provisioners/index.html
 * To help you get started, there is are examples in a separate repo I created.   You can create a Pull Request if you would like to contribute.
   * https://github.com/josenk/terraform-provider-esxi-wiki
+
 
 Vagrant vs Terraform.
 ---------------------
@@ -96,8 +96,27 @@ Not everyone has vCenter, vSphere, expensive APIs...  These cost $$$.  ESXi is f
 
 How to install
 --------------
-Download and install Terraform on your local system using instructions from https://www.terraform.io/downloads.html.
-Clone this plugin from github, build and place a copy of it in your path or current directory of your terraform project.  Or download pre-built binaries from https://github.com/josenk/terraform-provider-esxi/releases.
+* Install terraform
+  * Download and install Terraform on your local system using instructions from https://www.terraform.io/downloads.html.
+* Automatic install
+  * Add the required_providers block to your terraform project.
+  ```
+terraform {
+  required_version = ">= 0.13"
+  required_providers {
+    esxi = {
+      source = "registry.terraform.io/josenk/esxi"
+      #
+      # For more information, see the provider source documentation:
+      # https://github.com/josenk/terraform-provider-esxi
+      # https://registry.terraform.io/providers/josenk/esxi
+    }
+  }
+}
+```
+* Manual installation
+  * Download pre-built binaries from https://github.com/josenk/terraform-provider-esxi/releases.  Place a copy of it in your path or current directory of your terraform project.
+
 
 
 How to use and configure a main.tf file
