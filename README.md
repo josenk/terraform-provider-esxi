@@ -100,7 +100,7 @@ How to install
   * Download and install Terraform on your local system using instructions from https://www.terraform.io/downloads.html.
 * Automatic install
   * Add the required_providers block to your terraform project.
-  ```
+```
 terraform {
   required_version = ">= 0.13"
   required_providers {
