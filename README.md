@@ -100,7 +100,7 @@ How to install
   * Download and install Terraform on your local system using instructions from https://www.terraform.io/downloads.html.
 * Automatic install
   * Add the required_providers block to your terraform project.
-  ```
+```
 terraform {
   required_version = ">= 0.13"
   required_providers {
@@ -114,7 +114,7 @@ terraform {
   }
 }
 ```
-* Manual installation
+* Manual installation (Terraform 0.11.x or 0.12.x only)
   * Download pre-built binaries from https://github.com/josenk/terraform-provider-esxi/releases.  Place a copy of it in your path or current directory of your terraform project.
 
 
@@ -256,6 +256,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.7.2 Correctly set numvcpu when using clone_from_vm that doesn't have a numvcpu key set.
 * 1.7.1 Bump release to include support for Terraform 0.13
 * 1.7.0 Add support for esxi_hostssl (Setting the ssl port for ovftool).
 * 1.6.4 Fix default IP dection. Fix Disk Stores containing spaces.

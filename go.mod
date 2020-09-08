@@ -6,3 +6,5 @@ require (
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 )
+
+go 1.13

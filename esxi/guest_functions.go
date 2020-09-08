@@ -129,9 +129,14 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 
 	// modify numvcpus
 	if numvcpus != 0 {
-		re := regexp.MustCompile("numvcpus = \".*\"")
-		regexReplacement = fmt.Sprintf("numvcpus = \"%d\"", numvcpus)
-		vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+		if strings.Contains(vmx_contents, "numvcpus = ") {
+			re := regexp.MustCompile("numvcpus = \".*\"")
+			regexReplacement = fmt.Sprintf("numvcpus = \"%d\"", numvcpus)
+			vmx_contents = re.ReplaceAllString(vmx_contents, regexReplacement)
+		} else {
+			log.Printf("[updateVmx_contents] Add numvcpu: %d\n", numvcpus)
+			vmx_contents += fmt.Sprintf("\nnumvcpus = \"%d\"", numvcpus)
+		}
 	}
 
 	// modify virthwver
