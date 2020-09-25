@@ -5,7 +5,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	//"errors"
 )
 
 func validateVirtualDiskSlot(slot string) string {

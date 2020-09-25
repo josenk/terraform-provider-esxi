@@ -2,6 +2,7 @@ package esxi
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -17,7 +18,7 @@ func resourceVIRTUALDISKUpdate(d *schema.ResourceData, m interface{}) error {
 		_, _, _, curr_virtual_disk_size, _, err := virtualDiskREAD(c, d.Id())
 		if err != nil {
 			d.SetId("")
-			return nil
+			return fmt.Errorf("Failed to refresh virtual disk: %s\n", err)
 		}
 
 		virtual_disk_size := d.Get("virtual_disk_size").(int)
@@ -28,7 +29,7 @@ func resourceVIRTUALDISKUpdate(d *schema.ResourceData, m interface{}) error {
 
 		err = growVirtualDisk(c, d.Id(), strconv.Itoa(virtual_disk_size))
 		if err != nil {
-			return errors.New("Failed to grow disk:" + d.Id())
+			return fmt.Errorf("Failed to grow virtual disk: %s\n", err)
 		}
 	}
 

@@ -2,8 +2,9 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceVIRTUALDISKImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {

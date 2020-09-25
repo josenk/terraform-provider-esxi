@@ -25,42 +25,40 @@ func resourceGUEST() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: schema.EnvDefaultFunc("clone_from_vm", nil),
+				Default:     nil,
 				Description: "Source vm path on esxi host to clone.",
 			},
 			"host_ovf": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: schema.EnvDefaultFunc("host_ovf", nil),
+				Default:     nil,
 				Description: "Path on exsi host of ovf files.",
 			},
 			"ovf_source": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: schema.EnvDefaultFunc("ovf_source", nil),
+				Default:     nil,
 				Description: "Local path to source ovf files.",
 			},
 			"disk_store": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				DefaultFunc: schema.EnvDefaultFunc("disk_store", "Least Used"),
 				Description: "esxi diskstore for boot disk.",
 			},
 			"resource_pool_name": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				Computed:    true,
+				Default:     "/",
 				Description: "Resource pool name to place guest.",
 			},
 			"guest_name": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				DefaultFunc: schema.EnvDefaultFunc("guest_name", "vm-example"),
 				Description: "esxi guest name.",
 			},
 			"boot_disk_type": &schema.Schema{
@@ -75,7 +73,7 @@ func resourceGUEST() *schema.Resource {
 				Optional:    true,
 				ForceNew:    false,
 				Computed:    true,
-				DefaultFunc: schema.EnvDefaultFunc("boot_disk_size", nil),
+				Default:     nil,
 				Description: "Guest boot disk size. Will expand boot disk to this size.",
 			},
 			"memsize": &schema.Schema{
@@ -140,7 +138,6 @@ func resourceGUEST() *schema.Resource {
 				ForceNew:    false,
 				Computed:    true,
 				Description: "Guest power state.",
-				DefaultFunc: schema.EnvDefaultFunc("power", "on"),
 			},
 			//  Calculated only, you cannot overwrite this.
 			"ip_address": &schema.Schema{
@@ -170,9 +167,8 @@ func resourceGUEST() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"virtual_disk_id": &schema.Schema{
-							Type:        schema.TypeString,
-							Required:    true,
-							DefaultFunc: schema.EnvDefaultFunc("virtual_disk_id", ""),
+							Type:     schema.TypeString,
+							Required: true,
 						},
 						"slot": &schema.Schema{
 							Type:        schema.TypeString,

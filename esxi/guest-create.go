@@ -42,7 +42,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	err = diskStoreValidate(c, disk_store)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to validate disk store: %s\n", err)
 	}
 
 	//
@@ -62,7 +62,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if currentpowerstate == "on" || currentpowerstate == "suspended" {
 			_, err = guestPowerOff(c, vmid, guest_shutdown_timeout)
 			if err != nil {
-				return "", fmt.Errorf("Failed to power off existing guest. vmid:%s\n", vmid)
+				return "", fmt.Errorf("Failed to power off: %s\n", err)
 			}
 		}
 
@@ -301,7 +301,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	// get VMID (by name)
 	vmid, err = guestGetVMID(c, guest_name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to get vmid: %s\n", err)
 	}
 
 	//
@@ -334,7 +334,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 	err = growVirtualDisk(c, boot_disk_vmdkPATH, boot_disk_size)
 	if err != nil {
-		return vmid, fmt.Errorf("[guestCREATE] Failed to grow boot disk.\n")
+		return vmid, fmt.Errorf("Failed to grow boot disk: %s\n", err)
 	}
 
 	//
@@ -342,7 +342,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	err = updateVmx_contents(c, vmid, true, memsize, numvcpus, virthwver, guestos, virtual_networks, virtual_disks, notes, guestinfo)
 	if err != nil {
-		return vmid, err
+		return vmid, fmt.Errorf("Failed to update vmx contents: %s\n", err)
 	}
 
 	return vmid, nil

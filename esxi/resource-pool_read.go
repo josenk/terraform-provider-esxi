@@ -1,8 +1,10 @@
 package esxi
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"fmt"
 	"log"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceRESOURCEPOOLRead(d *schema.ResourceData, m interface{}) error {
@@ -21,7 +23,7 @@ func resourceRESOURCEPOOLRead(d *schema.ResourceData, m interface{}) error {
 	resource_pool_name, cpu_min, cpu_min_expandable, cpu_max, cpu_shares, mem_min, mem_min_expandable, mem_max, mem_shares, err = resourcePoolRead(c, pool_id)
 	if err != nil {
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Failed to refresh pool: %s\n", err)
 	}
 
 	d.Set("resource_pool_name", resource_pool_name)

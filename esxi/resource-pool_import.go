@@ -2,8 +2,9 @@ package esxi
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceRESOURCEPOOLImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
@@ -19,7 +20,7 @@ func resourceRESOURCEPOOLImport(d *schema.ResourceData, m interface{}) ([]*schem
 	// get VMID (by name)
 	_, err = getPoolNAME(c, d.Id())
 	if err != nil {
-		return results, fmt.Errorf("Failed to validate resource_pool: %s\n", err)
+		return results, fmt.Errorf("Failed to get pool name: %s\n", err)
 	} else {
 		d.SetId(d.Id())
 	}

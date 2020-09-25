@@ -16,9 +16,8 @@ func guestGetVMID(c *Config, guest_name string) (string, error) {
 	var remote_cmd, vmid string
 	var err error
 
-	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/getallvms 2>/dev/null | sort -n | "+
-		"grep \"[0-9] * %s .*%s\" | awk '{print $1}' | "+
-		"tail -1", guest_name, guest_name)
+	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/getallvms 2>/dev/null |sort -n | "+
+		"grep -m 1 \"[0-9] * %s .*%s\" |awk '{print $1}' ", guest_name, guest_name)
 
 	vmid, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "get vmid")
 	log.Printf("[guestGetVMID] result: %s\n", vmid)
@@ -114,7 +113,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	vmx_contents, err := readVmx_contents(c, vmid)
 	if err != nil {
 		log.Printf("[updateVmx_contents] Failed get vmx contents: %s\n", err)
-		return err
+		return fmt.Errorf("Failed to get vmx contents: %s\n", err)
 	}
 	if strings.Contains(vmx_contents, "Unable to find a VM corresponding") {
 		return nil
@@ -355,7 +354,7 @@ func cleanStorageFromVmx(c *Config, vmid string) error {
 	vmx_contents, err := readVmx_contents(c, vmid)
 	if err != nil {
 		log.Printf("[updateVmx_contents] Failed get vmx contents: %s\n", err)
-		return err
+		return fmt.Errorf("Failed to get vmx contents: %s\n", err)
 	}
 
 	for x := 0; x < 4; x++ {
@@ -477,7 +476,7 @@ func guestGetIpAddress(c *Config, vmid string, guest_startup_timeout int) string
 	uptime = 0
 	for uptime < guest_startup_timeout {
 		//  Primary method to get IP
-		remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null |sed '1!G;h;$!d' |awk '/deviceConfigId = 4000/,/ipAddress/' |grep -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\\.){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])' |tail -1", vmid)
+		remote_cmd = fmt.Sprintf("vim-cmd vmsvc/get.guest %s 2>/dev/null |sed '1!G;h;$!d' |awk '/deviceConfigId = 4000/,/ipAddress/' |grep -m 1 -oE '((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\\.){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])'", vmid)
 		stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "get ip_address method 1")
 		ip_address = stdout
 		if ip_address != "" {

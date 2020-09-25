@@ -62,7 +62,7 @@ func virtualDiskCREATE(c *Config, virtual_disk_disk_store string, virtual_disk_d
 	//
 	err = diskStoreValidate(c, virtual_disk_disk_store)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to validate disk store: %s\n", err)
 	}
 
 	//
@@ -74,7 +74,7 @@ func virtualDiskCREATE(c *Config, virtual_disk_disk_store string, virtual_disk_d
 	remote_cmd = fmt.Sprintf("ls -d \"/vmfs/volumes/%s/%s\"", virtual_disk_disk_store, virtual_disk_dir)
 	_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "validate dir exists")
 	if err != nil {
-		return "", errors.New("Unable to create virtual_disk directory.")
+		return "", fmt.Errorf("Failed to create virtual disk directory: %s\n", err)
 	}
 
 	//

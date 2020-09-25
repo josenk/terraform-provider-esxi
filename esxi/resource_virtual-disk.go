@@ -34,7 +34,7 @@ func resourceVIRTUALDISK() *schema.Resource {
 				ForceNew:    true,
 				Computed:    true,
 				DefaultFunc: schema.EnvDefaultFunc("virtual_disk_name", nil),
-				Description: "Virtual Disk Name. A random virtual disk name will be generated if nil.",
+				Description: "Virtual Disk Name.",
 			},
 			"virtual_disk_size": &schema.Schema{
 				Type:        schema.TypeInt,

@@ -21,7 +21,7 @@ func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 
 	_, err = guestPowerOff(c, vmid, guest_shutdown_timeout)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to power off: %s\n", err)
 	}
 
 	// remove storage from vmx so it doesn't get deleted by the vim-cmd destroy
@@ -34,9 +34,8 @@ func resourceGUESTDelete(d *schema.ResourceData, m interface{}) error {
 	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/destroy %s", vmid)
 	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmsvc/destroy")
 	if err != nil {
-		// todo more descriptive err message
 		log.Printf("[resourceGUESTDelete] Failed destroy vmid: %s\n", stdout)
-		return err
+		return fmt.Errorf("Failed to destroy vm: %s\n", err)
 	}
 
 	d.SetId("")

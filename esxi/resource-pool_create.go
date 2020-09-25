@@ -102,7 +102,7 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	parent_pool_id, err := getPoolID(c, parent_pool)
 	if err != nil {
 		d.SetId("")
-		return err
+		return fmt.Errorf("Failed to get pool id: %s\n", err)
 	}
 
 	remote_cmd = fmt.Sprintf("vim-cmd hostsvc/rsrc/create %s %s %s %s %s %s %s %s %s %s",
@@ -113,7 +113,7 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	pool_id, _ = getPoolID(c, resource_pool_name)
 	if err != nil {
 		d.SetId("")
-		return err
+		return fmt.Errorf("Failed to get pool id: %s\n", err)
 	}
 
 	//  Set pool_id
@@ -123,7 +123,7 @@ func resourceRESOURCEPOOLCreate(d *schema.ResourceData, m interface{}) error {
 	resource_pool_name, cpu_min, cpu_min_expandable, cpu_max, cpu_shares, mem_min, mem_min_expandable, mem_max, mem_shares, err = resourcePoolRead(c, pool_id)
 	if err != nil {
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Failed to refresh pool: %s\n", err)
 	}
 
 	d.Set("resource_pool_name", resource_pool_name)

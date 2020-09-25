@@ -2,7 +2,6 @@ package esxi
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -23,7 +22,7 @@ func getPoolID(c *Config, resource_pool_name string) (string, error) {
 	resource_pool_name = result[len(result)-1]
 
 	r := strings.NewReplacer("objID>", "", "</objID", "")
-	remote_cmd := fmt.Sprintf("grep -A1 '<name>%s</name>' /etc/vmware/hostd/pools.xml | grep -o objID.*objID | tail -1", resource_pool_name)
+	remote_cmd := fmt.Sprintf("grep -A1 '<name>%s</name>' /etc/vmware/hostd/pools.xml | grep -m 1 -o objID.*objID", resource_pool_name)
 	stdout, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "get existing resource pool id")
 	if err == nil {
 		stdout = r.Replace(stdout)
@@ -52,7 +51,7 @@ func getPoolNAME(c *Config, resource_pool_id string) (string, error) {
 	stdout, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "get resource pool path")
 	if err != nil {
 		log.Printf("[getPoolNAME] Failed get resource pool PATH: %s\n", stdout)
-		return "", err
+		return "", fmt.Errorf("Failed to get pool path: %s\n", err)
 	}
 
 	re := regexp.MustCompile(`[/<>\n]`)
@@ -99,7 +98,7 @@ func resourcePoolRead(c *Config, pool_id string) (string, int, string, int, stri
 	}
 	if err != nil {
 		log.Printf("[resourcePoolRead] Failed to get %s: %s\n", "resource pool_config_get", err)
-		return "", 0, "", 0, "", 0, "", 0, "", errors.New("Failed to get Resource Pool config.")
+		return "", 0, "", 0, "", 0, "", 0, "", fmt.Errorf("Failed to get pool config: %s\n", err)
 	}
 
 	is_cpu_flag := true
@@ -161,7 +160,7 @@ func resourcePoolRead(c *Config, pool_id string) (string, int, string, int, stri
 	resource_pool_name, err := getPoolNAME(c, pool_id)
 	if err != nil {
 		log.Printf("[resourcePoolRead] Failed to get Resource Pool name: %s\n", err)
-		return "", 0, "", 0, "", 0, "", 0, "", errors.New("Failed to get Resource Pool name.")
+		return "", 0, "", 0, "", 0, "", 0, "", fmt.Errorf("Failed to get pool name: %s\n", err)
 	}
 
 	return resource_pool_name, cpu_min, cpu_min_expandable, cpu_max, cpu_shares,

@@ -37,14 +37,14 @@ func resourceRESOURCEPOOLUpdate(d *schema.ResourceData, m interface{}) error {
 
 	stdout, err = getPoolNAME(c, pool_id)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to get pool name: %s\n", err)
 	}
 	if stdout != resource_pool_name {
 		log.Printf("[resourceRESOURCEPOOLUpdate] rename %s %s", pool_id, resource_pool_name)
 		remote_cmd = fmt.Sprintf("vim-cmd hostsvc/rsrc/rename %s %s", pool_id, resource_pool_name)
 		stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "update resource pool")
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to update pool: %s\n", err)
 		}
 	}
 
@@ -112,7 +112,7 @@ func resourceRESOURCEPOOLUpdate(d *schema.ResourceData, m interface{}) error {
 	resource_pool_name, cpu_min, cpu_min_expandable, cpu_max, cpu_shares, mem_min, mem_min_expandable, mem_max, mem_shares, err = resourcePoolRead(c, pool_id)
 	if err != nil {
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Failed to refresh pool: %s\n", err)
 	}
 
 	d.Set("resource_pool_name", resource_pool_name)

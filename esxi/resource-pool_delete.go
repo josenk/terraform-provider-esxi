@@ -22,7 +22,7 @@ func resourceRESOURCEPOOLDelete(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		// todo more descriptive err message
 		log.Printf("[resourcePoolDELETE] Failed destroy resource pool id: %s\n", stdout)
-		return err
+		return fmt.Errorf("Failed to delete pool: %s\n", err)
 	}
 
 	d.SetId("")

@@ -3,9 +3,10 @@ package esxi
 import (
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"strconv"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
@@ -81,7 +82,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	if currentpowerstate == "on" || currentpowerstate == "suspended" {
 		_, err = guestPowerOff(c, vmid, guest_shutdown_timeout)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to power off: %s\n", err)
 		}
 	}
 
@@ -93,8 +94,8 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	ivirthwver, _ := strconv.Atoi(virthwver)
 	err = updateVmx_contents(c, vmid, false, imemsize, inumvcpus, ivirthwver, guestos, virtual_networks, virtual_disks, notes, guestinfo)
 	if err != nil {
-		fmt.Println("Failed to update VMX file.")
-		return errors.New("Failed to update VMX file.")
+		fmt.Println("Failed to update vmx file.")
+		return fmt.Errorf("Failed to update vmx file: %s\n", err)
 	}
 
 	//
@@ -104,7 +105,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 
 	err = growVirtualDisk(c, boot_disk_vmdkPATH, boot_disk_size)
 	if err != nil {
-		return errors.New("Failed to grow boot disk.")
+		return fmt.Errorf("Failed to grow virtual disk: %s\n", err)
 	}
 
 	//  power on
@@ -112,7 +113,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 		_, err = guestPowerOn(c, vmid)
 		if err != nil {
 			fmt.Println("Failed to power on.")
-			return errors.New("Failed to power on.")
+			return fmt.Errorf("Failed to power on: %s\n", err)
 		}
 	}
 

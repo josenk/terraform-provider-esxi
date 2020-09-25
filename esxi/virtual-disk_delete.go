@@ -27,9 +27,8 @@ func resourceVIRTUALDISKDelete(d *schema.ResourceData, m interface{}) error {
 		if strings.Contains(err.Error(), "Process exited with status 255") == true {
 			log.Printf("[resourceVIRTUALDISKDelete] Already deleted:%s", virtdisk_id)
 		} else {
-			// todo more descriptive err message
 			log.Printf("[resourceVIRTUALDISKDelete] Failed destroy virtual disk id: %s\n", stdout)
-			return err
+			return fmt.Errorf("Failed to destroy virtual disk: %s\n", err)
 		}
 	}
 

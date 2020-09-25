@@ -1,8 +1,10 @@
 package esxi
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"fmt"
 	"log"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceVIRTUALDISKRead(d *schema.ResourceData, m interface{}) error {
@@ -12,7 +14,7 @@ func resourceVIRTUALDISKRead(d *schema.ResourceData, m interface{}) error {
 	virtual_disk_disk_store, virtual_disk_dir, virtual_disk_name, virtual_disk_size, virtual_disk_type, err := virtualDiskREAD(c, d.Id())
 	if err != nil {
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Failed to refresh virtual disk: %s\n", err)
 	}
 
 	d.Set("virtual_disk_disk_store", virtual_disk_disk_store)
