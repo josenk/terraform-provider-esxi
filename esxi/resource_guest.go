@@ -42,6 +42,13 @@ func resourceGUEST() *schema.Resource {
 				Default:     nil,
 				Description: "Local path to source ovf files.",
 			},
+			"uefi": &schema.Schema{
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    true,
+				Default:     false,
+				Description: "Boot type(true is boot uefi mode)",
+			},
 			"disk_store": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
@@ -250,6 +257,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	guestos := d.Get("guestos").(string)
 	notes := d.Get("notes").(string)
 	power := d.Get("power").(string)
+	is_uefi := d.Get("uefi").(bool)
 
 	if d.Get("guest_startup_timeout").(int) > 0 {
 		d.Set("guest_startup_timeout", d.Get("guest_startup_timeout").(int))
@@ -392,7 +400,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
-		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks,
+		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks, is_uefi,
 		virtual_disks, guest_shutdown_timeout, ovf_properties_timer, notes, guestinfo, ovf_properties)
 	if err != nil {
 		tmpint, _ = strconv.Atoi(vmid)
