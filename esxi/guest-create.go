@@ -3,6 +3,7 @@ package esxi
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -30,6 +31,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	var out bytes.Buffer
 	var err error
 	var is_ovf_properties bool
+	var ovf_bat *os.File
 	err = nil
 	is_ovf_properties = false
 
@@ -248,34 +250,37 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 			ovf_cmd = strings.Replace(ovf_cmd, "'", "\"", -1)
 
-			var ovf_bat = "ovf_cmd.bat"
+			ovf_bat, _ = ioutil.TempFile("", "ovf_cmd*.bat")
 
-			_, err = os.Stat(ovf_bat)
+			_, err = os.Stat(ovf_bat.Name())
 
 			// delete file if exists
 			if os.IsExist(err) {
-				err = os.Remove(ovf_bat)
+				err = os.Remove(ovf_bat.Name())
 				if err != nil {
-					return "", fmt.Errorf("Unable to delete %s: %s\n", ovf_bat, err.Error())
+					return "", fmt.Errorf("Unable to delete existing %s: %s\n", ovf_bat.Name(), err.Error())
 				}
 			}
 
 			//  create new batch file
-			file, err := os.Create(ovf_bat)
+			file, err := os.Create(ovf_bat.Name())
 			if err != nil {
-				return "", fmt.Errorf("Unable to create %s: %s\n", ovf_bat, err.Error())
+				return "", fmt.Errorf("Unable to create %s: %s\n", ovf_bat.Name(), err.Error())
 				defer file.Close()
 			}
 
 			_, err = file.WriteString(strings.Replace(ovf_cmd, "%", "%%", -1))
 			if err != nil {
-				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat, err.Error())
+				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat.Name(), err.Error())
 				defer file.Close()
 			}
 
-			err = file.Sync()
-			defer file.Close()
-			ovf_cmd = ovf_bat
+			err = file.Close()
+			if err != nil {
+				return "", fmt.Errorf("Unable to close %s: %s\n", ovf_bat.Name(), err.Error())
+				defer file.Close()
+			}
+			ovf_cmd = ovf_bat.Name()
 
 		} else {
 			osShellCmd = "/bin/bash"
@@ -291,6 +296,12 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		cmd.Stdout = &out
 		err = cmd.Run()
 		log.Printf("[guestCREATE] ovftool output: %q\n", out.String())
+
+		//  Attempt to delete tmp batch file.
+		if ovf_bat != nil {
+			_ = cmd.Wait()
+			_ = os.Remove(ovf_bat.Name())
+		}
 
 		if err != nil {
 			log.Printf("[guestCREATE] Failed, There was an ovftool Error: %s\n%s\n", out.String(), err.Error())

@@ -275,6 +275,7 @@ Known issues with vmware_esxi
 
 Version History
 ---------------
+* 1.8.1 Fix, multimachine create on Windows. 
 * 1.8.0 Add support for vswitch and portgroup resources.
 * 1.7.2 Correctly set numvcpu when using clone_from_vm that doesn't have a numvcpu key set.
 * 1.7.1 Bump release to include support for Terraform 0.13
