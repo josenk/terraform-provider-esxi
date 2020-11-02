@@ -12,7 +12,7 @@ variable "esxi_hostport" {
   default = "22"
 }
 
-varaible "esxi_hostssl" {
+variable "esxi_hostssl" {
   default = "443"
 }
 
