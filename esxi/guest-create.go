@@ -71,7 +71,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	} else if src_path == "none" {
 
 		// check if path already exists.
-		fullPATH := fmt.Sprintf("\"/vmfs/volumes/%s/%s\"", disk_store, guest_name)
+		fullPATH := fmt.Sprintf("/vmfs/volumes/%s/%s", disk_store, guest_name)
 		boot_disk_vmdkPATH = fmt.Sprintf("\"/vmfs/volumes/%s/%s/%s.vmdk\"", disk_store, guest_name, guest_name)
 
 		remote_cmd = fmt.Sprintf("ls -d %s", boot_disk_vmdkPATH)
@@ -81,10 +81,10 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			return "", fmt.Errorf("Guest may already exists. vmdkPATH:%s\n", boot_disk_vmdkPATH)
 		}
 
-		remote_cmd = fmt.Sprintf("ls -d %s", fullPATH)
+		remote_cmd = fmt.Sprintf("ls -d \"%s\"", fullPATH)
 		stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "check if guest path already exists.")
 		if strings.Contains(stdout, "No such file or directory") == true {
-			remote_cmd = fmt.Sprintf("mkdir %s", fullPATH)
+			remote_cmd = fmt.Sprintf("mkdir \"%s\"", fullPATH)
 			stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "create guest path")
 			if err != nil {
 				log.Printf("[guestCREATE] Failed to create guest path. fullPATH:%s\n", fullPATH)
@@ -163,14 +163,14 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 		dst_vmx_file := fmt.Sprintf("%s/%s.vmx", fullPATH, guest_name)
 
-		remote_cmd = fmt.Sprintf("echo \"%s\" >%s", vmx_contents, dst_vmx_file)
+		remote_cmd = fmt.Sprintf("echo \"%s\" >\"%s\"", vmx_contents, dst_vmx_file)
 		vmx_contents, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "write guest_name.vmx file")
 
 		//  Create boot disk (vmdk)
 		remote_cmd = fmt.Sprintf("vmkfstools -c %sG -d %s \"%s/%s.vmdk\"", boot_disk_size, boot_disk_type, fullPATH, guest_name)
 		_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmkfstools (make boot disk)")
 		if err != nil {
-			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
+			remote_cmd = fmt.Sprintf("rm -fr \"%s\"", fullPATH)
 			stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "cleanup guest path because of failed events")
 			log.Printf("[guestCREATE] Failed to vmkfstools (make boot disk):%s\n", err.Error())
 			return "", fmt.Errorf("Failed to vmkfstools (make boot disk):%s\n", err.Error())
@@ -182,11 +182,11 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			log.Printf("[guestCREATE] Failed to use Resource Pool ID:%s\n", poolID)
 			return "", fmt.Errorf("Failed to use Resource Pool ID:%s\n", poolID)
 		}
-		remote_cmd = fmt.Sprintf("vim-cmd solo/registervm %s %s %s", dst_vmx_file, guest_name, poolID)
+		remote_cmd = fmt.Sprintf("vim-cmd solo/registervm \"%s\" %s %s", dst_vmx_file, guest_name, poolID)
 		_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "solo/registervm")
 		if err != nil {
 			log.Printf("[guestCREATE] Failed to register guest:%s\n", err.Error())
-			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
+			remote_cmd = fmt.Sprintf("rm -fr \"%s\"", fullPATH)
 			stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "cleanup guest path because of failed events")
 			return "", fmt.Errorf("Failed to register guest:%s\n", err.Error())
 		}

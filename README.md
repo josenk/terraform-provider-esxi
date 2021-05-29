@@ -8,7 +8,7 @@ Terraform Provider
 
 Requirements
 ------------
--   [Terraform](https://www.terraform.io/downloads.html) 0.10.1+
+-   [Terraform](https://www.terraform.io/downloads.html) 0.11.x+
 -   [Go](https://golang.org/doc/install) 1.11+ (to build the provider plugin)
 -   [ovftool](https://www.vmware.com/support/developer/ovf/) from VMware.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You will need to manually set your path.
 -   You MUST enable ssh access on your ESXi hypervisor.
@@ -271,11 +271,17 @@ Known issues with vmware_esxi
 * Using an incorrect password could lockout your account using default esxi pam settings.
 * Don't set guest_startup_timeout or guest_shutdown_timeout to 0 (zero).  It's valid, however it will be changed to default values by terraform.
 
+Donations
+---------
+I work very hard to produce a stable, well documented product.  I appreciate any payments or donations for my efforts.
+* Bitcoin: 1Kt89337143SzLjSddkRDVEMBRUWoKQhqy
+* paypal:  josenk at jintegrate.co
 
 
 Version History
 ---------------
-* 1.8.1 Fix, multimachine create on Windows. 
+* 1.8.2 Fix, Disk Stores containing spaces for bare-metal builds.
+* 1.8.1 Fix, multimachine create on Windows.
 * 1.8.0 Add support for vswitch and portgroup resources.
 * 1.7.2 Correctly set numvcpu when using clone_from_vm that doesn't have a numvcpu key set.
 * 1.7.1 Bump release to include support for Terraform 0.13
