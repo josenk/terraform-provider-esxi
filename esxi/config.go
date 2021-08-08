@@ -25,5 +25,8 @@ func (c *Config) validateEsxiCreds() error {
 	if err != nil {
 		return fmt.Errorf("Failed to connect to esxi host: %s\n", err)
 	}
+
+	runRemoteSshCommand(esxiConnInfo, "mkdir -p ~", "Create home directory if missing")
+
 	return nil
 }
