@@ -280,6 +280,7 @@ I work very hard to produce a stable, well documented product.  I appreciate any
 
 Version History
 ---------------
+* 1.8.3 Add support for ldap integrated esxi systems.
 * 1.8.2 Fix, Disk Stores containing spaces for bare-metal builds.
 * 1.8.1 Fix, multimachine create on Windows.
 * 1.8.0 Add support for vswitch and portgroup resources.
