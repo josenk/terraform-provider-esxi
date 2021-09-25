@@ -25,6 +25,7 @@ builds:
     - '386'
     - arm
     - arm64
+    - ppc64le
   ignore:
     - goos: darwin
       goarch: '386'
