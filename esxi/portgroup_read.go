@@ -27,5 +27,13 @@ func resourcePORTGROUPRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("vswitch", vswitch)
 	d.Set("vlan", vlan)
 
+	policy, err := portgroupSecurityPolicyRead(c, name)
+	if err != nil {
+		return err
+	}
+	d.Set("promiscuous_mode", policy.AllowPromiscuous)
+	d.Set("mac_changes", policy.AllowMACAddressChange)
+	d.Set("forged_transmits", policy.AllowForgedTransmits)
+
 	return nil
 }

@@ -17,7 +17,6 @@ func resourcePORTGROUPUpdate(d *schema.ResourceData, m interface{}) error {
 	var err error
 
 	name := d.Get("name").(string)
-	vswitch := d.Get("vswitch").(string)
 	vlan := d.Get("vlan").(int)
 
 	//  set vlan id
@@ -26,19 +25,20 @@ func resourcePORTGROUPUpdate(d *schema.ResourceData, m interface{}) error {
 
 	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "portgroup set vlan")
 	if err != nil {
-		d.SetId("")
+		d.SetId("") // TODO do we really want to do this? maybe only if the portgroup
 		return fmt.Errorf("Failed to set portgroup: %s\n%s\n", stdout, err)
 	}
 
-	// Refresh
-	vswitch, vlan, err = portgroupRead(c, name)
+	// set the security policy.
+	promiscuous_mode := d.Get("promiscuous_mode").(bool)
+	forged_transmits := d.Get("forged_transmits").(bool)
+	mac_changes := d.Get("mac_changes").(bool)
+	remote_cmd = fmt.Sprintf("esxcli network vswitch standard portgroup policy security set -p \"%s\" --allow-promiscuous=%t --allow-forged-transmits=%t --allow-mac-change=%t", name, promiscuous_mode, forged_transmits, mac_changes)
+	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "portgroup set vlan")
 	if err != nil {
-		d.SetId("")
-		return nil
+		return fmt.Errorf("Failed to set the portgroup security policy: %s\n%s\n", stdout, err)
 	}
 
-	d.Set("vswitch", vswitch)
-	d.Set("vlan", vlan)
-
-	return nil
+	// Refresh
+	return resourcePORTGROUPRead(d, m)
 }

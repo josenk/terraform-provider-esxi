@@ -37,6 +37,27 @@ func resourcePORTGROUP() *schema.Resource {
 				Description:  "portgroup vlan.",
 				ValidateFunc: validation.IntBetween(0, 4095),
 			},
+			"promiscuous_mode": &schema.Schema{
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    false,
+				Default:     false,
+				Description: "Promiscuous mode (true=Accept/false=Reject).",
+			},
+			"mac_changes": &schema.Schema{
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    false,
+				Default:     false,
+				Description: "MAC address changes (true=Accept/false=Reject).",
+			},
+			"forged_transmits": &schema.Schema{
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    false,
+				Default:     false,
+				Description: "Forged transmits (true=Accept/false=Reject).",
+			},
 		},
 	}
 }
