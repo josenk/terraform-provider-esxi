@@ -14,7 +14,7 @@ data "template_file" "userdata_default" {
   template = file("userdata.tpl")
   vars = {
     HOSTNAME = var.vm_hostname
-    HELLO    = "Hello EXSI World!"
+    HELLO    = "Hello ESXi World!"
   }
 }
 

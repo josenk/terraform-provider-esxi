@@ -34,7 +34,7 @@ func Provider() terraform.ResourceProvider {
 			"esxi_hostssl": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("exsi_hostssl", "443"),
+				DefaultFunc: schema.EnvDefaultFunc("esxi_hostssl", "443"),
 				Description: "ssl port.",
 			},
 			"esxi_username": &schema.Schema{
