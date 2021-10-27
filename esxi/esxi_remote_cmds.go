@@ -75,6 +75,11 @@ func runRemoteSshCommand(esxiConnInfo ConnectionStruct, remoteSshCommand string,
 
 	stdout_raw, err := session.CombinedOutput(remoteSshCommand)
 	stdout := strings.TrimSpace(string(stdout_raw))
+
+	if stdout == "<unset>" {
+		return "Failed to ssh to esxi host or Management Agent has been restarted", err
+	}
+
 	log.Printf("[runRemoteSshCommand] cmd:/%s/\n stdout:/%s/\nstderr:/%s/\n", remoteSshCommand, stdout, err)
 
 	client.Close()

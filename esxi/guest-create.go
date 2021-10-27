@@ -103,7 +103,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			memsize = 512
 		}
 		if virthwver == 0 {
-			virthwver = 8
+			virthwver = 13
 		}
 		if guestos == "" {
 			guestos = "centos-64"

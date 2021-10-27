@@ -58,6 +58,7 @@ Terraform-provider-esxi plugin
 
 What's New:
 -----------
+* v1.9.0 Changed default hwversion from 8 to 13.  NOTE that this is a possible breaking change if you are using an old ESXi version.
 * v1.8.0 added vswitch and portgroup resources.
 * v1.7.1 added Terraform 0.13 support.  This provider is now in the terraform registry.
 >https://registry.terraform.io/providers/josenk/esxi
@@ -280,6 +281,7 @@ I work very hard to produce a stable, well documented product.  I appreciate any
 
 Version History
 ---------------
+* 1.9.0 Manage portgroup security policies, fix typos.
 * 1.8.3 Add support for ldap integrated esxi systems.
 * 1.8.2 Fix, Disk Stores containing spaces for bare-metal builds.
 * 1.8.1 Fix, multimachine create on Windows.
