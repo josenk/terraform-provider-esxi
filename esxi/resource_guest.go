@@ -33,7 +33,7 @@ func resourceGUEST() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     nil,
-				Description: "Path on exsi host of ovf files.",
+				Description: "Path on esxi host of ovf files.",
 			},
 			"ovf_source": &schema.Schema{
 				Type:        schema.TypeString,
