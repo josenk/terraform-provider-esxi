@@ -92,7 +92,7 @@ func resourceVSWITCHCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Change uplinks (list) to map
-	log.Println("[resourceVSWITCHCreate] uplinks: %q\n", uplinks)
+	log.Printf("[resourceVSWITCHCreate] uplinks: %s\n", uplinks)
 	uplink := make([]map[string]interface{}, 0, 1)
 
 	if len(uplinks) == 0 {

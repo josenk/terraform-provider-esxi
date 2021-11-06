@@ -262,10 +262,11 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	} else {
 		d.Set("guest_shutdown_timeout", 20)
 	}
-	if d.Get("ovf_properties_timer").(int) >= 0 {
+	if d.Get("ovf_properties_timer").(int) > 0 {
 		d.Set("ovf_properties_timer", d.Get("ovf_properties_timer").(int))
 		ovf_properties_timer = d.Get("ovf_properties_timer").(int)
 	} else {
+		d.Set("ovf_properties_timer", 90)
 		ovf_properties_timer = 90
 	}
 
@@ -405,7 +406,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	//  set vmid
 	d.SetId(vmid)
 
-	if power == "on" {
+	if power == "on" || power == "" {
 		_, err = guestPowerOn(c, vmid)
 		if err != nil {
 			return errors.New("Failed to power on.")

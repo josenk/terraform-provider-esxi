@@ -55,7 +55,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 	if vmid != "" {
 		// We don't need to create the VM.   It already exists.
-		fmt.Printf("[guestCREATE] guest %s already exists vmid: \n", guest_name, stdout)
+		fmt.Printf("[guestCREATE] guest %s already exists vmid: %s\n", guest_name, stdout)
 
 		//
 		//   Power off guest if it's powered on.
@@ -198,13 +198,14 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
 			log.Printf("[guestCREATE] Source is URL.\n")
 			resp, err := http.Get(src_path)
-			defer resp.Body.Close()
 			if (err != nil) || (resp.StatusCode != 200) {
 				log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
-				log.Printf("[guestCREATE] URL StatusCode: %s\n", resp.StatusCode)
+				log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
 				log.Printf("[guestCREATE] URL Error: %s\n", err.Error())
+				defer resp.Body.Close()
 				return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err.Error())
 			}
+			defer resp.Body.Close()
 		} else if strings.HasPrefix(src_path, "vi://") {
 			log.Printf("[guestCREATE] Source is Guest VM (vi).\n")
 		} else {
@@ -267,20 +268,20 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			//  create new batch file
 			file, err := os.Create(ovf_bat.Name())
 			if err != nil {
-				return "", fmt.Errorf("Unable to create %s: %s\n", ovf_bat.Name(), err.Error())
 				defer file.Close()
+				return "", fmt.Errorf("Unable to create %s: %s\n", ovf_bat.Name(), err.Error())
 			}
 
 			_, err = file.WriteString(strings.Replace(ovf_cmd, "%", "%%", -1))
 			if err != nil {
-				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat.Name(), err.Error())
 				defer file.Close()
+				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat.Name(), err.Error())
 			}
 
 			err = file.Close()
 			if err != nil {
-				return "", fmt.Errorf("Unable to close %s: %s\n", ovf_bat.Name(), err.Error())
 				defer file.Close()
+				return "", fmt.Errorf("Unable to close %s: %s\n", ovf_bat.Name(), err.Error())
 			}
 			ovf_cmd = ovf_bat.Name()
 
