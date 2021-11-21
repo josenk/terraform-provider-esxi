@@ -18,7 +18,7 @@ import (
 
 func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
-	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string,
+	boot_disk_type string, boot_disk_size string, virtual_networks [10][4]string,
 	virtual_disks [60][2]string, guest_shutdown_timeout int, ovf_properties_timer int, notes string,
 	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
 
@@ -227,7 +227,19 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 		net_param := ""
 		if (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) && virtual_networks[0][0] != "" {
-			net_param = " --network='" + virtual_networks[0][0] + "'"
+			// if ovf_network is set (not emptied), then we will add --net to net_param for ovf network mapping
+			// if ovt_network is emptied, then we will just resume to the default --network creation
+			log.Printf("[guestCREATE] Detecting single --network or multiple --net...\n")
+			if virtual_networks[0][3] == "" {
+				net_param += " --network='" + virtual_networks[0][0] + "'"
+			}
+
+			for i := 0; i < 10; i++ {
+				if virtual_networks[i][3] != "" {
+					net_param += " --net:'" + virtual_networks[i][3] + "=" + virtual_networks[i][0] + "'"
+				}
+			}
+			log.Printf("[guestCREATE] net_param: %s\n", net_param)
 		}
 
 		extra_params := ""

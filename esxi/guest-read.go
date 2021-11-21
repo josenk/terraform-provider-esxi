@@ -57,6 +57,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 			out["virtual_network"] = virtual_networks[nic][0]
 			out["mac_address"] = virtual_networks[nic][1]
 			out["nic_type"] = virtual_networks[nic][2]
+			out["ovf_network"] = virtual_networks[nic][3]
 			nics = append(nics, out)
 		}
 	}
@@ -83,7 +84,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [10][3]string, [60][2]string, string, string, map[string]interface{}, error) {
+func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [10][4]string, [60][2]string, string, string, map[string]interface{}, error) {
 	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[guestREAD]")
 
@@ -91,7 +92,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents, power string
 	var disk_size, vdiskindex int
 	var memsize, numvcpus, virthwver string
-	var virtual_networks [10][3]string
+	var virtual_networks [10][4]string
 	var virtual_disks [60][2]string
 	var guestinfo map[string]interface{}
 

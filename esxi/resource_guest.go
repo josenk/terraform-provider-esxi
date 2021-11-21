@@ -129,6 +129,12 @@ func resourceGUEST() *schema.Resource {
 							ForceNew: false,
 							Computed: true,
 						},
+						"ovf_network": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: false,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -231,7 +237,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 
 	log.Printf("[resourceGUESTCreate]\n")
 
-	var virtual_networks [10][3]string
+	var virtual_networks [10][4]string
 	var virtual_disks [60][2]string
 	var src_path string
 	var tmpint, i, virtualDiskCount, ovfPropsCount, guest_shutdown_timeout, ovf_properties_timer int
@@ -343,6 +349,10 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 				errMSG := fmt.Sprintf("Error: invalid nic_type. %s\nMust be vlance flexible e1000 e1000e vmxnet vmxnet2 or vmxnet3", virtual_networks[i][2])
 				return errors.New(errMSG)
 			}
+		}
+
+		if attr, ok := d.Get(prefix + "ovf_network").(string); ok && attr != "" {
+			virtual_networks[i][3] = d.Get(prefix + "ovf_network").(string)
 		}
 	}
 

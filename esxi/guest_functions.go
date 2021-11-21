@@ -102,7 +102,7 @@ func readVmx_contents(c *Config, vmid string) (string, error) {
 }
 
 func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numvcpus int,
-	virthwver int, guestos string, virtual_networks [10][3]string, virtual_disks [60][2]string, notes string,
+	virthwver int, guestos string, virtual_networks [10][4]string, virtual_disks [60][2]string, notes string,
 	guestinfo map[string]interface{}) error {
 
 	esxiConnInfo := getConnectionInfo(c)
