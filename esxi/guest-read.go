@@ -67,6 +67,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 			nics = append(nics, out)
 		}
 	}
+	log.Printf("nics and ovf_network: %q\n", nics)
 	d.Set("network_interfaces", nics)
 
 	// Do virtual disks
