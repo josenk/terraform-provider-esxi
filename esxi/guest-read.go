@@ -57,6 +57,12 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 			out["virtual_network"] = virtual_networks[nic][0]
 			out["mac_address"] = virtual_networks[nic][1]
 			out["nic_type"] = virtual_networks[nic][2]
+			// ovf_network value needs to get from tfstate once virtual machine created
+			// it is not stored in vmx file as in the case of virtual_network or nic_type
+			prefix := fmt.Sprintf("network_interfaces.%d.", nic)
+			if attr, ok := d.Get(prefix + "ovf_network").(string); ok && attr != "" {
+				virtual_networks[nic][3] = d.Get(prefix + "ovf_network").(string)
+			}
 			out["ovf_network"] = virtual_networks[nic][3]
 			nics = append(nics, out)
 		}
