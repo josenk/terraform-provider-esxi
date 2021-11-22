@@ -13,7 +13,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	c := m.(*Config)
 	log.Printf("[resourceGUESTUpdate]\n")
 
-	var virtual_networks [10][3]string
+	var virtual_networks [10][4]string
 	var virtual_disks [60][2]string
 	var i int
 	var err error
@@ -48,6 +48,9 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		if attr, ok := d.Get(prefix + "nic_type").(string); ok && attr != "" {
 			virtual_networks[i][2] = d.Get(prefix + "nic_type").(string)
+		}
+		if attr, ok := d.Get(prefix + "ovf_network").(string); ok && attr != "" {
+			virtual_networks[i][3] = d.Get(prefix + "ovf_network").(string)
 		}
 	}
 

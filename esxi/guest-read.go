@@ -57,9 +57,17 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 			out["virtual_network"] = virtual_networks[nic][0]
 			out["mac_address"] = virtual_networks[nic][1]
 			out["nic_type"] = virtual_networks[nic][2]
+			// ovf_network value needs to get from tfstate once virtual machine created
+			// it is not stored in vmx file as in the case of virtual_network or nic_type
+			prefix := fmt.Sprintf("network_interfaces.%d.", nic)
+			if attr, ok := d.Get(prefix + "ovf_network").(string); ok && attr != "" {
+				virtual_networks[nic][3] = d.Get(prefix + "ovf_network").(string)
+			}
+			out["ovf_network"] = virtual_networks[nic][3]
 			nics = append(nics, out)
 		}
 	}
+	log.Printf("nics and ovf_network: %q\n", nics)
 	d.Set("network_interfaces", nics)
 
 	// Do virtual disks
@@ -83,7 +91,7 @@ func resourceGUESTRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [10][3]string, [60][2]string, string, string, map[string]interface{}, error) {
+func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, string, string, string, string, string, string, string, string, string, [10][4]string, [60][2]string, string, string, map[string]interface{}, error) {
 	esxiConnInfo := getConnectionInfo(c)
 	log.Println("[guestREAD]")
 
@@ -91,7 +99,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	var dst_vmx_ds, dst_vmx, dst_vmx_file, vmx_contents, power string
 	var disk_size, vdiskindex int
 	var memsize, numvcpus, virthwver string
-	var virtual_networks [10][3]string
+	var virtual_networks [10][4]string
 	var virtual_disks [60][2]string
 	var guestinfo map[string]interface{}
 
