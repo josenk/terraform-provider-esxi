@@ -8,7 +8,7 @@ Terraform Provider
 
 Requirements
 ------------
--   [Terraform](https://www.terraform.io/downloads.html) 0.10.1+
+-   [Terraform](https://www.terraform.io/downloads.html) 0.11.x+
 -   [Go](https://golang.org/doc/install) 1.11+ (to build the provider plugin)
 -   [ovftool](https://www.vmware.com/support/developer/ovf/) from VMware.  NOTE: ovftool installer for windows doesn't put ovftool.exe in your path.  You will need to manually set your path.
 -   You MUST enable ssh access on your ESXi hypervisor.
@@ -58,6 +58,7 @@ Terraform-provider-esxi plugin
 
 What's New:
 -----------
+* v1.9.0 Changed default hwversion from 8 to 13.  NOTE that this is a possible breaking change if you are using an old ESXi version.
 * v1.8.0 added vswitch and portgroup resources.
 * v1.7.1 added Terraform 0.13 support.  This provider is now in the terraform registry.
 >https://registry.terraform.io/providers/josenk/esxi
@@ -272,10 +273,20 @@ Known issues with vmware_esxi
 * Using an incorrect password could lockout your account using default esxi pam settings.
 * Don't set guest_startup_timeout or guest_shutdown_timeout to 0 (zero).  It's valid, however it will be changed to default values by terraform.
 
+Donations
+---------
+I work very hard to produce a stable, well documented product.  I appreciate any payments or donations for my efforts.
+* Bitcoin: 1Kt89337143SzLjSddkRDVEMBRUWoKQhqy
+* paypal:  josenk at jintegrate.co
 
 
 Version History
 ---------------
+* 1.9.1 Fix, Set default ovf_properties_timer.  Fix and add more details to example 06.
+* 1.9.0 Manage portgroup security policies, fix typos.
+* 1.8.3 Add support for ldap integrated esxi systems.
+* 1.8.2 Fix, Disk Stores containing spaces for bare-metal builds.
+* 1.8.1 Fix, multimachine create on Windows.
 * 1.8.0 Add support for vswitch and portgroup resources.
 * 1.7.2 Correctly set numvcpu when using clone_from_vm that doesn't have a numvcpu key set.
 * 1.7.1 Bump release to include support for Terraform 0.13

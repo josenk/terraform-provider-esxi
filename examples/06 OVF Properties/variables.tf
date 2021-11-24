@@ -12,7 +12,7 @@ variable "esxi_hostport" {
   default = "22"
 }
 
-varaible "esxi_hostssl" {
+variable "esxi_hostssl" {
   default = "443"
 }
 
@@ -32,9 +32,13 @@ variable "disk_store" {
   default = "DiskStore01"
 }
 
-# Example downloaded from https://cloud-images.ubuntu.com/
+
 variable "ovf_file" {
-   default = "ubuntu-19.04-server-cloudimg-amd64.ova"
+  #  A local file downloaded from https://cloud-images.ubuntu.com
+  default = "ubuntu-19.04-server-cloudimg-amd64.ova"
+
+  #  Or specify a remote (url) file
+  #default = "https://cloud-images.ubuntu.com/releases/hirsute/release/ubuntu-21.04-server-cloudimg-amd64.ova"
 }
 
 variable "vm_hostname" {

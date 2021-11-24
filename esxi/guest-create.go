@@ -3,6 +3,7 @@ package esxi
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -31,6 +32,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	var out bytes.Buffer
 	var err error
 	var is_ovf_properties bool
+	var ovf_bat *os.File
 	err = nil
 	is_ovf_properties = false
 
@@ -54,7 +56,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 	if vmid != "" {
 		// We don't need to create the VM.   It already exists.
-		fmt.Printf("[guestCREATE] guest %s already exists vmid: \n", guest_name, stdout)
+		fmt.Printf("[guestCREATE] guest %s already exists vmid: %s\n", guest_name, stdout)
 
 		//
 		//   Power off guest if it's powered on.
@@ -70,7 +72,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	} else if src_path == "none" {
 
 		// check if path already exists.
-		fullPATH := fmt.Sprintf("\"/vmfs/volumes/%s/%s\"", disk_store, guest_name)
+		fullPATH := fmt.Sprintf("/vmfs/volumes/%s/%s", disk_store, guest_name)
 		boot_disk_vmdkPATH = fmt.Sprintf("\"/vmfs/volumes/%s/%s/%s.vmdk\"", disk_store, guest_name, guest_name)
 
 		remote_cmd = fmt.Sprintf("ls -d %s", boot_disk_vmdkPATH)
@@ -80,10 +82,10 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			return "", fmt.Errorf("Guest may already exists. vmdkPATH:%s\n", boot_disk_vmdkPATH)
 		}
 
-		remote_cmd = fmt.Sprintf("ls -d %s", fullPATH)
+		remote_cmd = fmt.Sprintf("ls -d \"%s\"", fullPATH)
 		stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "check if guest path already exists.")
 		if strings.Contains(stdout, "No such file or directory") == true {
-			remote_cmd = fmt.Sprintf("mkdir %s", fullPATH)
+			remote_cmd = fmt.Sprintf("mkdir \"%s\"", fullPATH)
 			stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "create guest path")
 			if err != nil {
 				log.Printf("[guestCREATE] Failed to create guest path. fullPATH:%s\n", fullPATH)
@@ -100,7 +102,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			memsize = 512
 		}
 		if virthwver == 0 {
-			virthwver = 8
+			virthwver = 13
 		}
 		if guestos == "" {
 			guestos = "centos-64"
@@ -163,14 +165,14 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 		dst_vmx_file := fmt.Sprintf("%s/%s.vmx", fullPATH, guest_name)
 
-		remote_cmd = fmt.Sprintf("echo \"%s\" >%s", vmx_contents, dst_vmx_file)
+		remote_cmd = fmt.Sprintf("echo \"%s\" >\"%s\"", vmx_contents, dst_vmx_file)
 		vmx_contents, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "write guest_name.vmx file")
 
 		//  Create boot disk (vmdk)
 		remote_cmd = fmt.Sprintf("vmkfstools -c %sG -d %s \"%s/%s.vmdk\"", boot_disk_size, boot_disk_type, fullPATH, guest_name)
 		_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmkfstools (make boot disk)")
 		if err != nil {
-			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
+			remote_cmd = fmt.Sprintf("rm -fr \"%s\"", fullPATH)
 			stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "cleanup guest path because of failed events")
 			log.Printf("[guestCREATE] Failed to vmkfstools (make boot disk):%s\n", err.Error())
 			return "", fmt.Errorf("Failed to vmkfstools (make boot disk):%s\n", err.Error())
@@ -182,11 +184,11 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			log.Printf("[guestCREATE] Failed to use Resource Pool ID:%s\n", poolID)
 			return "", fmt.Errorf("Failed to use Resource Pool ID:%s\n", poolID)
 		}
-		remote_cmd = fmt.Sprintf("vim-cmd solo/registervm %s %s %s", dst_vmx_file, guest_name, poolID)
+		remote_cmd = fmt.Sprintf("vim-cmd solo/registervm \"%s\" %s %s", dst_vmx_file, guest_name, poolID)
 		_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "solo/registervm")
 		if err != nil {
 			log.Printf("[guestCREATE] Failed to register guest:%s\n", err.Error())
-			remote_cmd = fmt.Sprintf("rm -fr %s", fullPATH)
+			remote_cmd = fmt.Sprintf("rm -fr \"%s\"", fullPATH)
 			stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "cleanup guest path because of failed events")
 			return "", fmt.Errorf("Failed to register guest:%s\n", err.Error())
 		}
@@ -198,13 +200,14 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
 			log.Printf("[guestCREATE] Source is URL.\n")
 			resp, err := http.Get(src_path)
-			defer resp.Body.Close()
 			if (err != nil) || (resp.StatusCode != 200) {
 				log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
-				log.Printf("[guestCREATE] URL StatusCode: %s\n", resp.StatusCode)
+				log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
 				log.Printf("[guestCREATE] URL Error: %s\n", err.Error())
+				defer resp.Body.Close()
 				return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err.Error())
 			}
+			defer resp.Body.Close()
 		} else if strings.HasPrefix(src_path, "vi://") {
 			log.Printf("[guestCREATE] Source is Guest VM (vi).\n")
 		} else {
@@ -219,8 +222,10 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if boot_disk_type == "zeroedthick" {
 			boot_disk_type = "thick"
 		}
+
+		username := url.QueryEscape(c.esxiUserName)
 		password := url.QueryEscape(c.esxiPassword)
-		dst_path := fmt.Sprintf("vi://%s:%s@%s:%s/%s", c.esxiUserName, password, c.esxiHostName, c.esxiHostSSLport, resource_pool_name)
+		dst_path := fmt.Sprintf("vi://%s:%s@%s:%s/%s", username, password, c.esxiHostName, c.esxiHostSSLport, resource_pool_name)
 
 		net_param := ""
 		if (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) && virtual_networks[0][0] != "" {
@@ -250,34 +255,37 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 
 			ovf_cmd = strings.Replace(ovf_cmd, "'", "\"", -1)
 
-			var ovf_bat = "ovf_cmd.bat"
+			ovf_bat, _ = ioutil.TempFile("", "ovf_cmd*.bat")
 
-			_, err = os.Stat(ovf_bat)
+			_, err = os.Stat(ovf_bat.Name())
 
 			// delete file if exists
 			if os.IsExist(err) {
-				err = os.Remove(ovf_bat)
+				err = os.Remove(ovf_bat.Name())
 				if err != nil {
-					return "", fmt.Errorf("Unable to delete %s: %s\n", ovf_bat, err.Error())
+					return "", fmt.Errorf("Unable to delete existing %s: %s\n", ovf_bat.Name(), err.Error())
 				}
 			}
 
 			//  create new batch file
-			file, err := os.Create(ovf_bat)
+			file, err := os.Create(ovf_bat.Name())
 			if err != nil {
-				return "", fmt.Errorf("Unable to create %s: %s\n", ovf_bat, err.Error())
 				defer file.Close()
+				return "", fmt.Errorf("Unable to create %s: %s\n", ovf_bat.Name(), err.Error())
 			}
 
 			_, err = file.WriteString(strings.Replace(ovf_cmd, "%", "%%", -1))
 			if err != nil {
-				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat, err.Error())
 				defer file.Close()
+				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat.Name(), err.Error())
 			}
 
-			err = file.Sync()
-			defer file.Close()
-			ovf_cmd = ovf_bat
+			err = file.Close()
+			if err != nil {
+				defer file.Close()
+				return "", fmt.Errorf("Unable to close %s: %s\n", ovf_bat.Name(), err.Error())
+			}
+			ovf_cmd = ovf_bat.Name()
 
 		} else {
 			osShellCmd = "/bin/bash"
@@ -293,6 +301,12 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		cmd.Stdout = &out
 		err = cmd.Run()
 		log.Printf("[guestCREATE] ovftool output: %q\n", out.String())
+
+		//  Attempt to delete tmp batch file.
+		if ovf_bat != nil {
+			_ = cmd.Wait()
+			_ = os.Remove(ovf_bat.Name())
+		}
 
 		if err != nil {
 			log.Printf("[guestCREATE] Failed, There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
