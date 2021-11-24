@@ -42,12 +42,12 @@ func resourceGUEST() *schema.Resource {
 				Default:     nil,
 				Description: "Local path to source ovf files.",
 			},
-			"uefi": &schema.Schema{
-				Type:        schema.TypeBool,
+			"boot_firmware": &schema.Schema{
+				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
-				Default:     false,
-				Description: "Boot type(true is boot uefi mode)",
+				ForceNew:    false,
+				Default:     "bios",
+				Description: "Boot type('efi' is boot uefi mode)",
 			},
 			"disk_store": &schema.Schema{
 				Type:        schema.TypeString,
@@ -255,9 +255,9 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	numvcpus := d.Get("numvcpus").(string)
 	virthwver := d.Get("virthwver").(string)
 	guestos := d.Get("guestos").(string)
+	boot_firmware := d.Get("boot_firmware").(string)
 	notes := d.Get("notes").(string)
 	power := d.Get("power").(string)
-	is_uefi := d.Get("uefi").(bool)
 
 	if d.Get("guest_startup_timeout").(int) > 0 {
 		d.Set("guest_startup_timeout", d.Get("guest_startup_timeout").(int))
@@ -401,7 +401,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
-		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks, is_uefi,
+		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks, boot_firmware,
 		virtual_disks, guest_shutdown_timeout, ovf_properties_timer, notes, guestinfo, ovf_properties)
 	if err != nil {
 		tmpint, _ = strconv.Atoi(vmid)
