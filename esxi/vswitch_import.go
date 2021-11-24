@@ -29,5 +29,7 @@ func resourceVSWITCHImport(d *schema.ResourceData, m interface{}) ([]*schema.Res
 	}
 
 	d.SetId(d.Id())
+	d.Set("name", d.Id())
+
 	return results, nil
 }

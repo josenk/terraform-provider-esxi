@@ -13,13 +13,11 @@ func resourcePORTGROUPCreate(d *schema.ResourceData, m interface{}) error {
 	log.Println("[resourcePORTGROUPCreate]")
 
 	var stdout string
-	var somthingWentWrong string
 	var remote_cmd string
 	var err error
 
 	name := d.Get("name").(string)
 	vswitch := d.Get("vswitch").(string)
-	vlan := d.Get("vlan").(int)
 
 	//  Create PORTGROUP
 	remote_cmd = fmt.Sprintf("esxcli network vswitch standard portgroup add -v \"%s\" -p \"%s\"",
@@ -34,27 +32,5 @@ func resourcePORTGROUPCreate(d *schema.ResourceData, m interface{}) error {
 	//  Set id
 	d.SetId(name)
 
-	//  set vlan id
-	remote_cmd = fmt.Sprintf("esxcli network vswitch standard portgroup set -v \"%d\" -p \"%s\"",
-		vlan, name)
-
-	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "portgroup set vlan")
-	if err != nil {
-		somthingWentWrong = fmt.Sprintf("Failed to set portgroup vlan: %s\n%s\n", stdout, err)
-	}
-
-	// Refresh
-	vswitch, vlan, err = portgroupRead(c, name)
-	if err != nil {
-		d.SetId("")
-		return nil
-	}
-
-	d.Set("vswitch", vswitch)
-	d.Set("vlan", vlan)
-
-	if somthingWentWrong != "" {
-		return fmt.Errorf(somthingWentWrong)
-	}
-	return nil
+	return resourcePORTGROUPUpdate(d, m)
 }

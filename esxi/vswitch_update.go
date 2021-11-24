@@ -72,7 +72,7 @@ func resourceVSWITCHUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Change uplinks (list) to map
-	log.Println("[resourceVSWITCHUpdate] uplinks: %q\n", uplinks)
+	log.Printf("[resourceVSWITCHUpdate] uplinks: %q\n", uplinks)
 	uplink := make([]map[string]interface{}, 0, 1)
 
 	if len(uplinks) == 0 {
