@@ -93,7 +93,7 @@ func guestREAD(c *Config, vmid string, guest_startup_timeout int) (string, strin
 	var disk_size, vdiskindex int
 	var memsize, numvcpus, virthwver string
 	var virtual_networks [10][3]string
-	var boot_firmware string
+	var boot_firmware string = "bios"
 	var virtual_disks [60][2]string
 	var guestinfo map[string]interface{}
 

@@ -282,6 +282,7 @@ I work very hard to produce a stable, well documented product.  I appreciate any
 
 Version History
 ---------------
+* 1.10.0 Add support for boot_firmware. Fix portgroup to default to inherit from vSwitch.
 * 1.9.1 Fix, Set default ovf_properties_timer.  Fix and add more details to example 06.
 * 1.9.0 Manage portgroup security policies, fix typos.
 * 1.8.3 Add support for ldap integrated esxi systems.
