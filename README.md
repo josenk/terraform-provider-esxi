@@ -200,6 +200,7 @@ Configuration reference
   * boot_disk_type - Optional - Guest boot disk type. Default 'thin'.  Available thin, zeroedthick, eagerzeroedthick.
   * boot_disk_size - Optional - Specify boot disk size or grow cloned vm to this size.
   * guestos - Optional - Default will be taken from cloned source.
+  * boot_firmware - Optional - If "efi", enable efi boot. - Default "bios" (BIOS boot)
   * clone_from_vm - Source vm to clone. Mutually exclusive with ovf_source option.
   * ovf_source - ovf files or URLs to use as a source. Mutually exclusive with clone_from_vm option.
   * disk_store - Required - esxi Disk Store where guest vm will be created.
@@ -282,6 +283,7 @@ I work very hard to produce a stable, well documented product.  I appreciate any
 
 Version History
 ---------------
+* 1.10.0 Add support for boot_firmware. Fix portgroup to default to inherit from vSwitch.
 * 1.9.1 Fix, Set default ovf_properties_timer.  Fix and add more details to example 06.
 * 1.9.0 Manage portgroup security policies, fix typos.
 * 1.8.3 Add support for ldap integrated esxi systems.

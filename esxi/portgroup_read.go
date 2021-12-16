@@ -31,6 +31,7 @@ func resourcePORTGROUPRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	d.Set("promiscuous_mode", policy.AllowPromiscuous)
 	d.Set("mac_changes", policy.AllowMACAddressChange)
 	d.Set("forged_transmits", policy.AllowForgedTransmits)
