@@ -26,7 +26,7 @@ You first must set your GOPATH.   If you are unsure, please review the documenta
 >https://github.com/golang/go/wiki/SettingGOPATH
 
 
-Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-esxi`
+Clone repository to: `$GOPATH/src/github.com/josenk/terraform-provider-esxi`
 
 ```sh
 
