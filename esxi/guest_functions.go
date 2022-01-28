@@ -313,6 +313,9 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 
 				tmpvar = fmt.Sprintf("ethernet%d.address = \"%s\"\n", i, virtual_networks[i][1])
 				vmx_contents_new = vmx_contents_new + tmpvar
+				
+				tmpvar = fmt.Sprintf("ethernet%d.CheckMACAddress = \"FALSE\"\n", i)
+				vmx_contents_new = vmx_contents_new + tmpvar
 			}
 
 			//  Set network type
