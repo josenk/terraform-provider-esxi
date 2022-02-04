@@ -146,10 +146,13 @@ func virtualDiskREAD(c *Config, virtdisk_id string) (string, string, string, int
 	log.Printf("[virtualDiskREAD] len=%d cap=%d %v\n", len(s), cap(s), s)
 	if len(s) < 6 {
 		return "", "", "", 0, "", nil
+	} else if len(s) > 6 {
+	  virtual_disk_dir = strings.Join(s[4:len(s)-1], "/")
+	} else {
+	  virtual_disk_dir = s[4]
 	}
 	virtual_disk_disk_store = s[3]
-	virtual_disk_dir = s[4]
-	virtual_disk_name = s[5]
+	virtual_disk_name = s[len(s)-1]
 
 	// Test if virtual disk exists
 	remote_cmd := fmt.Sprintf("test -s \"%s\"", virtdisk_id)
