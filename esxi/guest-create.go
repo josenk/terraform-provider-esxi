@@ -3,6 +3,7 @@ package esxi
 import (
 	"bytes"
 	"fmt"
+	"github.com/hashicorp/go-version"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,6 +17,59 @@ import (
 	"time"
 )
 
+func execCommand(cmd string) *exec.Cmd {
+	var osShellCmd, osShellCmdOpt string
+
+	if runtime.GOOS == "windows" {
+		osShellCmd = "cmd.exe"
+		osShellCmdOpt = "/c"
+	} else {
+		osShellCmd = "/bin/bash"
+		osShellCmdOpt = "-c"
+	}
+
+	return exec.Command(osShellCmd, osShellCmdOpt, cmd)
+}
+
+// ovftool introduced --pullUploadMode flag at OVFTool 4.4.1 release,
+// which allow ESXi host to directly download (pull) from the remote OVF/OVA URL, assuming it has connectivity.
+// In addition to version of OVFTool, you will also need to have either ESXi 6.7 or 7.0 environment for this new feature to work.
+// source: https://williamlam.com/2020/10/ovftool-4-4-1-upload-ovf-ova-from-url-using-upcoming-pull-mechanism.html
+func canUsePullUploadMode(c *Config) bool {
+	var out bytes.Buffer
+	var err error
+
+	cmd := execCommand("ovftool -v")
+	cmd.Stdout = &out
+	err = cmd.Run()
+	if err != nil {
+		fmt.Errorf("Failed to run ovftool -v: %s\n", err)
+		return false
+	}
+	ovftoolVersion := out.String()
+	log.Printf("[guestCREATE] ovftool version: %q\n", ovftoolVersion)
+
+	re := regexp.MustCompile(`(\d{1,2}\.\d{1,2}\.\d{1,3})`)
+	ovftoolVersion = re.FindAllString(ovftoolVersion, -1)[0]
+
+	log.Printf("[config] ovftool version: %s\n", ovftoolVersion)
+	actualVersion, err := version.NewVersion(ovftoolVersion)
+	if err != nil {
+		fmt.Errorf("Unable to instantiate actualVersion object: %s\n", err)
+		return false
+	}
+
+	actualEsxiVersion, err := version.NewVersion(c.esxiVersion)
+	if err != nil {
+		fmt.Errorf("Unable to instantiate actualVersion object: %s\n", err)
+		return false
+	}
+
+	constraintsOvftool, err := version.NewConstraint(">= 4.4.1")
+	constraintsEsxi, err := version.NewConstraint(">= 6.7, <= 7.0")
+	return constraintsOvftool.Check(actualVersion) && constraintsEsxi.Check(actualEsxiVersion)
+}
+
 func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
 	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string, boot_firmware string,
@@ -26,14 +80,14 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	log.Printf("[guestCREATE]\n")
 
 	var memsize, numvcpus, virthwver int
-	var boot_disk_vmdkPATH, remote_cmd, vmid, stdout, vmx_contents string
-	var osShellCmd, osShellCmdOpt string
+	var boot_disk_vmdkPATH, remote_cmd, vmid, stdout, vmx_contents, pull_upload_mode string
 	var out bytes.Buffer
 	var err error
 	var is_ovf_properties bool
 	var ovf_bat *os.File
 	err = nil
 	is_ovf_properties = false
+	pull_upload_mode = ""
 
 	memsize, _ = strconv.Atoi(strmemsize)
 	numvcpus, _ = strconv.Atoi(strnumvcpus)
@@ -191,6 +245,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			return "", fmt.Errorf("Failed to use Resource Pool ID:%s\n", poolID)
 		}
 		remote_cmd = fmt.Sprintf("vim-cmd solo/registervm \"%s\" %s %s", dst_vmx_file, guest_name, poolID)
+		log.Printf("[guestCREATE] vim-cmd solo/registervm: %s\n", remote_cmd)
 		_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "solo/registervm")
 		if err != nil {
 			log.Printf("[guestCREATE] Failed to register guest:%s\n", err.Error())
@@ -205,15 +260,20 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		//  Check if source file exist.
 		if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
 			log.Printf("[guestCREATE] Source is URL.\n")
-			resp, err := http.Get(src_path)
-			if (err != nil) || (resp.StatusCode != 200) {
-				log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
-				log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
-				log.Printf("[guestCREATE] URL Error: %s\n", err.Error())
+
+			if !canUsePullUploadMode(c) {
+				resp, err := http.Get(src_path)
+				if (err != nil) || (resp.StatusCode != 200) {
+					log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
+					log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
+					log.Printf("[guestCREATE] URL Error: %s\n", err.Error())
+					defer resp.Body.Close()
+					return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err.Error())
+				}
 				defer resp.Body.Close()
-				return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err.Error())
+			} else {
+				pull_upload_mode = "--pullUploadMode "
 			}
-			defer resp.Body.Close()
 		} else if strings.HasPrefix(src_path, "vi://") {
 			log.Printf("[guestCREATE] Source is Guest VM (vi).\n")
 		} else {
@@ -253,12 +313,9 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		}
 
 		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false %s "+
-			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'", extra_params, boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
+			"-dm=%s --name='%s' --overwrite -ds='%s' %s %s'%s' '%s'", extra_params, boot_disk_type, guest_name, disk_store, net_param, pull_upload_mode, src_path, dst_path)
 
 		if runtime.GOOS == "windows" {
-			osShellCmd = "cmd.exe"
-			osShellCmdOpt = "/c"
-
 			ovf_cmd = strings.Replace(ovf_cmd, "'", "\"", -1)
 
 			ovf_bat, _ = ioutil.TempFile("", "ovf_cmd*.bat")
@@ -292,14 +349,10 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 				return "", fmt.Errorf("Unable to close %s: %s\n", ovf_bat.Name(), err.Error())
 			}
 			ovf_cmd = ovf_bat.Name()
-
-		} else {
-			osShellCmd = "/bin/bash"
-			osShellCmdOpt = "-c"
 		}
 
 		//  Execute ovftool script (or batch) here.
-		cmd := exec.Command(osShellCmd, osShellCmdOpt, ovf_cmd)
+		cmd := execCommand(ovf_cmd)
 
 		re := regexp.MustCompile(`vi://.*?@`)
 		log.Printf("[guestCREATE] ovf_cmd: %s\n", re.ReplaceAllString(ovf_cmd, "vi://XXXX:YYYY@"))

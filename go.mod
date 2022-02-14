@@ -1,6 +1,7 @@
 module github.com/josenk/terraform-provider-esxi
 
 require (
+	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/terraform v0.12.2
 	github.com/jszwec/csvutil v1.5.1
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect

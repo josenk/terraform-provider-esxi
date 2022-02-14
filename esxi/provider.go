@@ -68,6 +68,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		esxiHostSSLport: d.Get("esxi_hostssl").(string),
 		esxiUserName:    d.Get("esxi_username").(string),
 		esxiPassword:    d.Get("esxi_password").(string),
+		esxiVersion:     "",
 	}
 
 	if err := config.validateEsxiCreds(); err != nil {
