@@ -24,9 +24,17 @@ func resourcePORTGROUPCreate(d *schema.ResourceData, m interface{}) error {
 		vswitch, name)
 
 	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "create portgroup")
+
 	if err != nil {
-		d.SetId("")
-		return fmt.Errorf("Failed to add portgroup: %s\n%s\n", stdout, err)
+		// check if message on error is because a portgroup is already existing on host
+		var msg_already_exists string
+		msg_already_exists = fmt.Sprintf("A portgroup with the name %s already exists", name)
+		if stdout != msg_already_exists {
+			d.SetId("")
+			return fmt.Errorf("Failed to add portgroup: %s\n%s\n", stdout, err)
+		} else {
+			log.Printf("[resourcePORTGROUPCreate] %s - continuing\n", stdout)
+		}
 	}
 
 	//  Set id
