@@ -42,6 +42,13 @@ func resourceGUEST() *schema.Resource {
 				Default:     nil,
 				Description: "Local path to source ovf files.",
 			},
+			"cdrom_datastore_iso": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    false,
+				Default:     nil,
+				Description: "Path on esxi host of iso file(e.g. datastore1/iso/centos.iso).",
+			},
 			"boot_firmware": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -247,6 +254,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	clone_from_vm := d.Get("clone_from_vm").(string)
 	ovf_source := d.Get("ovf_source").(string)
 	disk_store := d.Get("disk_store").(string)
+	cdrom_datastore_iso := d.Get("cdrom_datastore_iso").(string)
 	resource_pool_name := d.Get("resource_pool_name").(string)
 	guest_name := d.Get("guest_name").(string)
 	boot_disk_type := d.Get("boot_disk_type").(string)
@@ -401,7 +409,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
-		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks, boot_firmware,
+		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks, boot_firmware, cdrom_datastore_iso,
 		virtual_disks, guest_shutdown_timeout, ovf_properties_timer, notes, guestinfo, ovf_properties)
 	if err != nil {
 		tmpint, _ = strconv.Atoi(vmid)

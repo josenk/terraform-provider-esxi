@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -18,7 +19,7 @@ import (
 
 func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
-	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string, boot_firmware string,
+	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string, boot_firmware string, cdrom_datastore_iso string,
 	virtual_disks [60][2]string, guest_shutdown_timeout int, ovf_properties_timer int, notes string,
 	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
 
@@ -92,8 +93,6 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			}
 		}
 
-		hasISO := false
-		isofilename := ""
 		notes = strings.Replace(notes, "\"", "|22", -1)
 
 		if numvcpus == 0 {
@@ -150,7 +149,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			vmx_contents = vmx_contents +
 				fmt.Sprintf("firmware = \\\"bios\\\"\n")
 		}
-		if hasISO == true {
+		if cdrom_datastore_iso == "" {
 			vmx_contents = vmx_contents +
 				fmt.Sprintf("ide1:0.present = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("ide1:0.fileName = \\\"emptyBackingString\\\"\n") +
@@ -158,9 +157,11 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 				fmt.Sprintf("ide1:0.startConnected = \\\"FALSE\\\"\n") +
 				fmt.Sprintf("ide1:0.clientDevice = \\\"TRUE\\\"\n")
 		} else {
+			cdrom_datastore_iso_path := filepath.Join("/vmfs/volumes/", cdrom_datastore_iso)
 			vmx_contents = vmx_contents +
 				fmt.Sprintf("ide1:0.present = \\\"TRUE\\\"\n") +
-				fmt.Sprintf("ide1:0.fileName = \\\"%s\\\"\n", isofilename) +
+				fmt.Sprintf("ide1:0.fileName = \\\"%s\\\"\n", cdrom_datastore_iso_path) +
+				fmt.Sprintf("ide1:0.startConnected = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("ide1:0.deviceType = \\\"cdrom-image\\\"\n")
 		}
 

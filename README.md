@@ -204,6 +204,7 @@ Configuration reference
   * clone_from_vm - Source vm to clone. Mutually exclusive with ovf_source option.
   * ovf_source - ovf files or URLs to use as a source. Mutually exclusive with clone_from_vm option.
   * disk_store - Required - esxi Disk Store where guest vm will be created.
+  * cdrom_datastore_iso - Optional - Attaching an iso file on the ESXi host. - e.g. "datastore1/iso/centos.iso"
   * resource_pool_name - Optional - Any existing or terraform managed resource pool name. - Default "/".
   * memsize - Optional - Memory size in MB.  (ie, 1024 == 1GB). See esxi documentation for limits. - Default 512 or default taken from cloned source.
   * numvcpus - Optional - Number of virtual cpus.  See esxi documentation for limits. - Default 1 or default taken from cloned source.
