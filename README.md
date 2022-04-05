@@ -261,6 +261,11 @@ Using ovf_source & clone_from_vm
     * For example, Ubuntu cloud-images: https://cloud-images.ubuntu.com/trusty/current/trusty-server-cloudimg-amd64.ova
 * If neither is specified, then a bare-metal VM will be created.  There will be no OS on this vm.  If the VM is powered on, it will default to a network PXE boot.  
 * ovf_source & clone_from_vm are mutually exclusive.
+* List of available ovf properties can be seen by using ovftool.
+  * ovftool https://cloud-images.ubuntu.com/trusty/current/trusty-server-cloudimg-amd64.ova
+* Value for user-data ovf property should be base64-encoded string or file, for example.
+  * value = filebase64("${path.module}/user-data.yaml")
+* Examples for user-data settings can be found here: https://cloudinit.readthedocs.io/en/latest/topics/examples.html
 
 
 Known issues with vmware_esxi
