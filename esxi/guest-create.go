@@ -354,7 +354,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	boot_disk_vmdkPATH, _ = getBootDiskPath(c, vmid)
 
-	err = growVirtualDisk(c, boot_disk_vmdkPATH, boot_disk_size)
+	_, err = growVirtualDisk(c, boot_disk_vmdkPATH, boot_disk_size)
 	if err != nil {
 		return vmid, fmt.Errorf("Failed to grow boot disk: %s\n", err)
 	}

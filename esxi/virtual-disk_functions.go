@@ -105,10 +105,11 @@ func virtualDiskCREATE(c *Config, virtual_disk_disk_store string, virtual_disk_d
 //
 //  Grow virtual Disk
 //
-func growVirtualDisk(c *Config, virtdisk_id string, virtdisk_size string) error {
+func growVirtualDisk(c *Config, virtdisk_id string, virtdisk_size string) (bool, error) {
 	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[growVirtualDisk]\n")
 
+	var didGrowDisk bool
 	var newDiskSize int
 
 	_, _, _, currentDiskSize, _, err := virtualDiskREAD(c, virtdisk_id)
@@ -121,11 +122,12 @@ func growVirtualDisk(c *Config, virtdisk_id string, virtdisk_size string) error 
 		remote_cmd := fmt.Sprintf("/bin/vmkfstools -X %dG \"%s\"", newDiskSize, virtdisk_id)
 		_, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "grow disk")
 		if err != nil {
-			return err
+			return didGrowDisk, err
 		}
+		didGrowDisk = true
 	}
 
-	return err
+	return didGrowDisk, err
 }
 
 //
