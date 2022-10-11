@@ -11,6 +11,8 @@ type Config struct {
 	esxiHostSSLport string
 	esxiUserName    string
 	esxiPassword    string
+
+	esxiRemoteOvfToolPath string
 }
 
 func (c *Config) validateEsxiCreds() error {
@@ -27,6 +29,16 @@ func (c *Config) validateEsxiCreds() error {
 	}
 
 	runRemoteSshCommand(esxiConnInfo, "mkdir -p ~", "Create home directory if missing")
+
+	if c.esxiRemoteOvfToolPath != "" {
+		remote_cmd = fmt.Sprintf("%s --version", c.esxiRemoteOvfToolPath)
+		vsn, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "Checking installation of ovftool on ESXi")
+		if err != nil {
+			return fmt.Errorf("Failed to invoke ovftool on ESXi host: %+v\n", err)
+		}
+
+		log.Printf("Found ovftool on ESXi host: %s\n", vsn)
+	}
 
 	return nil
 }
