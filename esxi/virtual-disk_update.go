@@ -27,7 +27,7 @@ func resourceVIRTUALDISKUpdate(d *schema.ResourceData, m interface{}) error {
 			return errors.New("Not able to shrink virtual disk:" + d.Id())
 		}
 
-		err = growVirtualDisk(c, d.Id(), strconv.Itoa(virtual_disk_size))
+		_, err = growVirtualDisk(c, d.Id(), strconv.Itoa(virtual_disk_size))
 		if err != nil {
 			return fmt.Errorf("Failed to grow virtual disk: %s\n", err)
 		}

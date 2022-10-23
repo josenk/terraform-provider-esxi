@@ -108,7 +108,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[updateVmx_contents]\n")
 
-	var regexReplacement, remote_cmd string
+	var regexReplacement string
 
 	vmx_contents, err := readVmx_contents(c, vmid)
 	if err != nil {
@@ -345,16 +345,13 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 
 	vmx_contents, err = writeContentToRemoteFile(esxiConnInfo, strings.Replace(vmx_contents, "\\\"", "\"", -1), dst_vmx_file, "write guest_name.vmx file")
 
-	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/reload %s", vmid)
-	_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmsvc/reload")
+	err = guestReload(c, vmid)
 	return err
 }
 
 func cleanStorageFromVmx(c *Config, vmid string) error {
 	esxiConnInfo := getConnectionInfo(c)
 	log.Printf("[cleanStorageFromVmx]\n")
-
-	var remote_cmd string
 
 	vmx_contents, err := readVmx_contents(c, vmid)
 	if err != nil {
@@ -378,10 +375,18 @@ func cleanStorageFromVmx(c *Config, vmid string) error {
 
 	dst_vmx_file, err := getDst_vmx_file(c, vmid)
 	vmx_contents, err = writeContentToRemoteFile(esxiConnInfo, strings.Replace(vmx_contents, "\\\"", "\"", -1), dst_vmx_file, "write guest_name.vmx file")
-	remote_cmd = fmt.Sprintf("sed -i '/^$/d' %s", dst_vmx_file)
 
-	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/reload %s", vmid)
-	_, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmsvc/reload")
+	err = guestReload(c, vmid)
+	return err
+}
+
+func guestReload(c *Config, vmid string) error {
+	esxiConnInfo := getConnectionInfo(c)
+	log.Printf("[guestReload]\n")
+
+	remote_cmd := fmt.Sprintf("vim-cmd vmsvc/reload %s", vmid)
+	_, err := runRemoteSshCommand(esxiConnInfo, remote_cmd, "vmsvc/reload")
+
 	return err
 }
 

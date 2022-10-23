@@ -17,6 +17,7 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	var virtual_disks [60][2]string
 	var i int
 	var err error
+	var did_grow bool
 
 	vmid := d.Id()
 	memsize := d.Get("memsize").(string)
@@ -104,9 +105,13 @@ func resourceGUESTUpdate(d *schema.ResourceData, m interface{}) error {
 	//
 	boot_disk_vmdkPATH, _ := getBootDiskPath(c, vmid)
 
-	err = growVirtualDisk(c, boot_disk_vmdkPATH, boot_disk_size)
+	did_grow, err = growVirtualDisk(c, boot_disk_vmdkPATH, boot_disk_size)
 	if err != nil {
 		return fmt.Errorf("Failed to grow virtual disk: %s\n", err)
+	}
+
+	if did_grow {
+		err = guestReload(c, vmid)
 	}
 
 	//  power on
