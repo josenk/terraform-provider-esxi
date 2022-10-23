@@ -161,7 +161,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			vmx_contents = vmx_contents +
 				fmt.Sprintf("ide1:0.present = \\\"TRUE\\\"\n") +
 				fmt.Sprintf("ide1:0.fileName = \\\"%s\\\"\n", isofilename) +
-				fmt.Sprintf("ide1:0.deviceType = \\\"cdrom-image\\\"\n")
+				fmt.Sprintf("ide1:0.deviceType = \\\"cdrom-raw\\\"\n")
 		}
 
 		//

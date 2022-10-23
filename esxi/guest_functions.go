@@ -56,7 +56,7 @@ func getBootDiskPath(c *Config, vmid string) (string, error) {
 	var remote_cmd, stdout string
 	var err error
 
-	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/device.getdevices %s | grep -A10 'key = 2000'|grep -m 1 fileName", vmid)
+	remote_cmd = fmt.Sprintf("vim-cmd vmsvc/device.getdevices %s | grep -A10 -e 'key = 2000' -e 'key = 3000' -e 'key = 16000'|grep -m 1 fileName", vmid)
 	stdout, err = runRemoteSshCommand(esxiConnInfo, remote_cmd, "get boot disk")
 	if err != nil {
 		log.Printf("[getBootDiskPath] Failed get boot disk path: %s\n", stdout)
