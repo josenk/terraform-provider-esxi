@@ -68,5 +68,5 @@ data "template_file" "cloud-metadata" {
 }
 
 output "ip" {
-  value = [esxi_guest.k3s-single-mode-vm.ip_address]
+  value = [esxi_guest.vmtest01.ip_address]
 }
