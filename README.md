@@ -50,7 +50,7 @@ Terraform-provider-esxi plugin
 >https://www.vmware.com/go/get-free-esxi
 
 * If you don't know terraform, I highly recommend you read through the introduction on the hashicorp website.
->https://www.terraform.io/intro/getting-started/install.html
+>https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 
 * VMware Configuration Maximums tool.
 >https://configmax.vmware.com/guest
