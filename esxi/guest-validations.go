@@ -75,7 +75,9 @@ func validateGuestOsType(guestos string) bool {
 	}
 
 	//  All valid Guest OS's
-	allGuestOSs := [...]string{"asianux",
+	allGuestOSs := [...]string{
+		"amazonlinux",
+		"asianux",
 		"centos",
 		"coreos",
 		"darwin",
