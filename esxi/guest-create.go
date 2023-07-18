@@ -2,6 +2,7 @@ package esxi
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -205,7 +206,11 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		//  Check if source file exist.
 		if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
 			log.Printf("[guestCREATE] Source is URL.\n")
-			resp, err := http.Get(src_path)
+			tr := &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}
+			client := &http.Client{Transport: tr}
+			resp, err := client.Get(src_path)
 			if (err != nil) || (resp.StatusCode != 200) {
 				log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
 				log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
