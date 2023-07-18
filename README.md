@@ -58,7 +58,7 @@ Terraform-provider-esxi plugin
 
 What's New:
 -----------
-* v1.9.0 Changed default hwversion from 8 to 13.  NOTE that this is a possible breaking change if you are using an old ESXi version.
+* v1.9.0 Changed default hwversion from 8 to 13.  NOTE that this is a possible breaking change if you are using versions of ESXi older than 6.5.
 * v1.8.0 added vswitch and portgroup resources.
 * v1.7.1 added Terraform 0.13 support.  This provider is now in the terraform registry.
 >https://registry.terraform.io/providers/josenk/esxi
