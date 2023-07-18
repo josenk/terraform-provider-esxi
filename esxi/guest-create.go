@@ -206,14 +206,21 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 		if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
 			log.Printf("[guestCREATE] Source is URL.\n")
 			resp, err := http.Get(src_path)
+			if resp != nil {
+				defer resp.Body.Close()
+			}
 			if (err != nil) || (resp.StatusCode != 200) {
 				log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
-				log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
-				log.Printf("[guestCREATE] URL Error: %s\n", err.Error())
-				defer resp.Body.Close()
-				return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err.Error())
+				if resp != nil {
+					log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
+				}
+				err_msg := ""
+				if err != nil {
+					err_msg = err.Error()
+					log.Printf("[guestCREATE] URL Error: %s\n", err_msg)
+				}
+				return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err_msg)
 			}
-			defer resp.Body.Close()
 		} else if strings.HasPrefix(src_path, "vi://") {
 			log.Printf("[guestCREATE] Source is Guest VM (vi).\n")
 		} else {
