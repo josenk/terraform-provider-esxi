@@ -3,7 +3,6 @@ package esxi
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -23,17 +22,13 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
 
 	esxiConnInfo := getConnectionInfo(c)
-	log.Printf("[guestCREATE]\n")
 
 	var memsize, numvcpus, virthwver int
 	var boot_disk_vmdkPATH, remote_cmd, vmid, stdout, vmx_contents string
-	var osShellCmd, osShellCmdOpt string
-	var out bytes.Buffer
-	var err error
-	var is_ovf_properties bool
-	var ovf_bat *os.File
-	err = nil
-	is_ovf_properties = false
+
+	// Indicates that ovftool requires ovf properties to be passed through
+	// (and thus requires slightly different way of managing disk resizing)
+	usesOvfProperties := len(ovf_properties) > 0
 
 	memsize, _ = strconv.Atoi(strmemsize)
 	numvcpus, _ = strconv.Atoi(strnumvcpus)
@@ -42,7 +37,7 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	//
 	//  Check if Disk Store already exists
 	//
-	err = diskStoreValidate(c, disk_store)
+	err := diskStoreValidate(c, disk_store)
 	if err != nil {
 		return "", fmt.Errorf("Failed to validate disk store: %s\n", err)
 	}
@@ -198,140 +193,129 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			stdout, _ = runRemoteSshCommand(esxiConnInfo, remote_cmd, "cleanup guest path because of failed events")
 			return "", fmt.Errorf("Failed to register guest:%s\n", err.Error())
 		}
-
 	} else {
-		//  Build VM by ovftool
+		// Setup command line for ovftool invocation
+		var args strings.Builder
 
-		//  Check if source file exist.
-		if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
-			log.Printf("[guestCREATE] Source is URL.\n")
-			resp, err := http.Get(src_path)
+		// Indicates that ovftool on ESXi host should be used
+		useRemoteOvfTool := false
+
+		// Add any OVF properties needed to command line; also note that in order for OVF properties to work,
+		// VM must immediately be powered on (which we have to account for when changing disk size, for example)
+		if usesOvfProperties {
+			args.WriteString("--X:injectOvfEnv --powerOn ")
+			for k, v := range ovf_properties {
+				args.WriteString(fmt.Sprintf("--prop:%s=%s ", k, v))
+			}
+		}
+
+		// Add any guest info flags into extra config settings
+		if len(guestinfo) > 0 {
+			args.WriteString("--allowExtraConfig ")
+			for k, v := range guestinfo {
+				args.WriteString(fmt.Sprintf("--extraConfig:guestinfo.%s=%s ", k, v))
+			}
+		}
+
+		// Ensure source file exists. There are 4 variations:
+		// * vi URL - source is a guest VM; nothing to verify
+		// * HTTP URL - verify it's a 200 response (using HEAD)
+		// * host_ovf - source is a path *on* the ESXi box (requires ovftool to be installed on ESXi box as well)
+		// * Local file - source is a local file that will be uploaded
+		if strings.HasPrefix(src_path, "vi://") {
+			log.Printf("[guestCREATE] ovf_source is guest VM")
+
+		} else if strings.HasPrefix(src_path, "http://") || strings.HasPrefix(src_path, "https://") {
+			log.Printf("[guestCREATE] ovf_source is HTTP/S URL")
+			resp, err := http.Head(src_path)
+			defer resp.Body.Close()
 			if (err != nil) || (resp.StatusCode != 200) {
 				log.Printf("[guestCREATE] URL not accessible: %s\n", src_path)
 				log.Printf("[guestCREATE] URL StatusCode: %d\n", resp.StatusCode)
 				log.Printf("[guestCREATE] URL Error: %s\n", err.Error())
-				defer resp.Body.Close()
-				return "", fmt.Errorf("URL not accessible: %s\n%s", src_path, err.Error())
+				return "", fmt.Errorf("ovf_source URL not accessible: %s\n%s", src_path, err.Error())
 			}
-			defer resp.Body.Close()
-		} else if strings.HasPrefix(src_path, "vi://") {
-			log.Printf("[guestCREATE] Source is Guest VM (vi).\n")
+
+		} else if strings.HasPrefix(src_path, "host_ovf://") {
+			log.Printf("[guestCREATE] ovf_source is path on ESXi host")
+
+			// Make sure remote OVF tool is defined; at this point, we've verified tool is present as well
+			if c.esxiRemoteOvfToolPath == "" {
+				return "", fmt.Errorf("host_ovf source configured, but no path found for ovftool on ESXi!")
+			}
+			useRemoteOvfTool = true
+			src_path = strings.TrimPrefix(src_path, "host_ovf://")
+
 		} else {
-			log.Printf("[guestCREATE] Source is local.\n")
+			log.Printf("[guestCREATE] ovf_source is local file\n")
+			useRemoteOvfTool = false
 			if _, err := os.Stat(src_path); os.IsNotExist(err) {
 				log.Printf("[guestCREATE] File not found, Error: %s\n", err.Error())
-				return "", fmt.Errorf("File not found: %s\n", src_path)
+				return "", fmt.Errorf("ovf_source file not found: %s\n", src_path)
 			}
 		}
 
-		//  Set params for ovftool
+		//  Set disk mode param
 		if boot_disk_type == "zeroedthick" {
 			boot_disk_type = "thick"
 		}
+		args.WriteString(fmt.Sprintf("--diskMode=%s ", boot_disk_type))
 
+		// Construct destination path for ovftool
 		username := url.QueryEscape(c.esxiUserName)
 		password := url.QueryEscape(c.esxiPassword)
 		dst_path := fmt.Sprintf("vi://%s:%s@%s:%s/%s", username, password, c.esxiHostName, c.esxiHostSSLport, resource_pool_name)
 
-		net_param := ""
+		// If the source is an OVA or OVF and a virtual network is defined, add parameter for ovftool
 		if (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) && virtual_networks[0][0] != "" {
-			net_param = " --network='" + virtual_networks[0][0] + "'"
+			args.WriteString(fmt.Sprintf("--network='%s' ", virtual_networks[0][0]))
 		}
 
-		extra_params := ""
-		if (len(ovf_properties) > 0) && (strings.HasSuffix(src_path, ".ova") || strings.HasSuffix(src_path, ".ovf")) {
-			is_ovf_properties = true
-			// in order to process any OVF params, guest should be immediately powered on
-			// This is because the ESXi host doesn't have a cache to store the OVF parameters, like the vCenter Server does.
-			// Therefore, you MUST use the ‘--X:injectOvfEnv’ option with the ‘--poweron’ option
-			extra_params = "--X:injectOvfEnv --allowExtraConfig --powerOn "
+		// Include guest name
+		args.WriteString(fmt.Sprintf("--name=%s ", guest_name))
 
-			for ovf_prop_key, ovf_prop_value := range ovf_properties {
-				extra_params = fmt.Sprintf("%s --prop:%s='%s' ", extra_params, ovf_prop_key, ovf_prop_value)
-			}
-			log.Println("[guestCREATE] ovf_properties extra_params: " + extra_params)
-		}
+		// Include data store
+		args.WriteString(fmt.Sprintf("--datastore=%s ", disk_store))
 
-		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false %s "+
-			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'", extra_params, boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
+		// Add other parameters to ovftool
+		args.WriteString("--acceptAllEulas --noSSLVerify ")
 
-		if runtime.GOOS == "windows" {
-			osShellCmd = "cmd.exe"
-			osShellCmdOpt = "/c"
+		// Finalize arguments to ovftool
+		ovf_args := fmt.Sprintf("%s %s %s", args.String(), src_path, dst_path)
 
-			ovf_cmd = strings.Replace(ovf_cmd, "'", "\"", -1)
+		// Log sanitized set of args to ovftool
+		re := regexp.MustCompile("vi://.*?@")
+		sanitized_ovf_args := re.ReplaceAllString(ovf_args, "vi://XXXX:YYYY@")
+		log.Printf("[guestCREATE] Invoking ovftool with args: %s\n", sanitized_ovf_args)
 
-			ovf_bat, _ = ioutil.TempFile("", "ovf_cmd*.bat")
+		var ovftoolOutput string
+		var ovftoolErr error
 
-			_, err = os.Stat(ovf_bat.Name())
-
-			// delete file if exists
-			if os.IsExist(err) {
-				err = os.Remove(ovf_bat.Name())
-				if err != nil {
-					return "", fmt.Errorf("Unable to delete existing %s: %s\n", ovf_bat.Name(), err.Error())
-				}
-			}
-
-			//  create new batch file
-			file, err := os.Create(ovf_bat.Name())
-			if err != nil {
-				defer file.Close()
-				return "", fmt.Errorf("Unable to create %s: %s\n", ovf_bat.Name(), err.Error())
-			}
-
-			_, err = file.WriteString(strings.Replace(ovf_cmd, "%", "%%", -1))
-			if err != nil {
-				defer file.Close()
-				return "", fmt.Errorf("Unable to write to %s: %s\n", ovf_bat.Name(), err.Error())
-			}
-
-			err = file.Close()
-			if err != nil {
-				defer file.Close()
-				return "", fmt.Errorf("Unable to close %s: %s\n", ovf_bat.Name(), err.Error())
-			}
-			ovf_cmd = ovf_bat.Name()
-
+		if useRemoteOvfTool {
+			// Invoke ovftool on ESXi host via SSH
+			ovftoolOutput, ovftoolErr = runRemoteSshCommand(esxiConnInfo, fmt.Sprintf("%s %s", c.esxiRemoteOvfToolPath, ovf_args), "remote ovftool")
 		} else {
-			osShellCmd = "/bin/bash"
-			osShellCmdOpt = "-c"
+			ovftoolOutput, ovftoolErr = runOvfTool(ovf_args)
 		}
 
-		//  Execute ovftool script (or batch) here.
-		cmd := exec.Command(osShellCmd, osShellCmdOpt, ovf_cmd)
-
-		re := regexp.MustCompile(`vi://.*?@`)
-		log.Printf("[guestCREATE] ovf_cmd: %s\n", re.ReplaceAllString(ovf_cmd, "vi://XXXX:YYYY@"))
-
-		cmd.Stdout = &out
-		err = cmd.Run()
-		log.Printf("[guestCREATE] ovftool output: %q\n", out.String())
-
-		//  Attempt to delete tmp batch file.
-		if ovf_bat != nil {
-			_ = cmd.Wait()
-			_ = os.Remove(ovf_bat.Name())
-		}
-
-		if err != nil {
-			log.Printf("[guestCREATE] Failed, There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
-			return "", fmt.Errorf("There was an ovftool Error: %s\n%s\n", out.String(), err.Error())
+		log.Printf("[guestCREATE] ovftool output: %s\n", ovftoolOutput)
+		if ovftoolErr != nil {
+			log.Printf("[guestCREATE] failed to invoke remote ovftool: %s\n", ovftoolErr)
+			return "", fmt.Errorf("failed to invoke remote ovftool: %s\n", ovftoolErr)
 		}
 	}
 
-	// get VMID (by name)
+	// Get VMID (by name)
 	vmid, err = guestGetVMID(c, guest_name)
 	if err != nil {
 		return "", fmt.Errorf("Failed to get vmid: %s\n", err)
 	}
 
-	//
-	//   ovf_properties require ovftool to power on the VM to inject the properties.
-	//   Unfortunatly, there is no way to know when cloud-init is finished?!?!?  Just need
-	//   to wait for ovf_properties_timer seconds, then shutdown/power-off to continue...
-	//
-	if is_ovf_properties == true {
+	// OVF properties require ovftool to power on the VM to inject the properties.
+	// Unfortunately, there is no way to know when cloud-init is finished. So, we
+	// wait for ovf_properties_timer seconds, then shutdown/power-off to continue and hope
+	// system comes down cleanly.
+	if usesOvfProperties == true {
 		currentpowerstate := guestPowerGetState(c, vmid)
 		log.Printf("[guestCREATE] Current VM PowerState: %s\n", currentpowerstate)
 		if currentpowerstate != "on" {
@@ -368,4 +352,50 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 	}
 
 	return vmid, nil
+}
+
+func runOvfTool(ovf_args string) (string, error) {
+	osShellCmd := "/bin/bash"
+	osShellCmdOpt := "-c"
+
+	ovf_cmd := "ovftool " + ovf_args
+
+	// On Windows, we write a temporary batch file to invoke ovftool (why??)
+	if runtime.GOOS == "windows" {
+		osShellCmd = "cmd.exe"
+		osShellCmdOpt = "/c"
+
+		// Replace any single quotes with escaped double quotes and escape any percent signs
+		ovf_cmd = strings.Replace(ovf_cmd, "'", "\"", -1)
+		ovf_cmd = strings.Replace(ovf_cmd, "%", "%%", -1)
+
+		// Create a temp file
+		file, err := os.CreateTemp("", "ovf_cmd*.bat")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp ovf_cmd.bat file: %+v", err)
+		}
+
+		_, err = file.WriteString(ovf_cmd)
+		if err != nil {
+			file.Close()
+			return "", fmt.Errorf("failed to write ovf_cmd.bat file: %+v", err)
+		}
+
+		err = file.Close()
+		if err != nil {
+			return "", fmt.Errorf("failed to close ovf_cmd.bat file: %+v", err)
+		}
+
+		ovf_cmd = file.Name()
+	}
+
+	var out bytes.Buffer
+	cmd := exec.Command(osShellCmd, osShellCmdOpt, ovf_cmd)
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("failed to invoke local ovftool: %s\n", err)
+	}
+
+	return out.String(), nil
 }

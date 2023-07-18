@@ -1,19 +1,9 @@
 package esxi
 
 import (
-	"fmt"
-	"log"
-	"os"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
-
-func init() {
-	// Terraform is already adding the timestamp for us
-	log.SetFlags(log.Lshortfile)
-	log.SetPrefix(fmt.Sprintf("pid-%d-", os.Getpid()))
-}
 
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
@@ -49,6 +39,11 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("esxi_password", "unset"),
 				Description: "esxi ssh password.",
 			},
+			"esxi_remote_ovftool_path": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "ovftool path on ESXi host",
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"esxi_guest":         resourceGUEST(),
@@ -63,11 +58,12 @@ func Provider() terraform.ResourceProvider {
 
 func configureProvider(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		esxiHostName:    d.Get("esxi_hostname").(string),
-		esxiHostSSHport: d.Get("esxi_hostport").(string),
-		esxiHostSSLport: d.Get("esxi_hostssl").(string),
-		esxiUserName:    d.Get("esxi_username").(string),
-		esxiPassword:    d.Get("esxi_password").(string),
+		esxiHostName:          d.Get("esxi_hostname").(string),
+		esxiHostSSHport:       d.Get("esxi_hostport").(string),
+		esxiHostSSLport:       d.Get("esxi_hostssl").(string),
+		esxiUserName:          d.Get("esxi_username").(string),
+		esxiPassword:          d.Get("esxi_password").(string),
+		esxiRemoteOvfToolPath: d.Get("esxi_remote_ovftool_path").(string),
 	}
 
 	if err := config.validateEsxiCreds(); err != nil {

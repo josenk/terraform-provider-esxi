@@ -28,13 +28,6 @@ func resourceGUEST() *schema.Resource {
 				Default:     nil,
 				Description: "Source vm path on esxi host to clone.",
 			},
-			"host_ovf": &schema.Schema{
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Default:     nil,
-				Description: "Path on esxi host of ovf files.",
-			},
 			"ovf_source": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -73,7 +66,7 @@ func resourceGUEST() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     "thin",
-				Description: "Guest boot disk type. thin, zeroedthick, eagerzeroedthick",
+				Description: "Guest boot disk type: thin (default), zeroedthick, eagerzeroedthick",
 			},
 			"boot_disk_size": &schema.Schema{
 				Type:        schema.TypeString,
@@ -81,14 +74,14 @@ func resourceGUEST() *schema.Resource {
 				ForceNew:    false,
 				Computed:    true,
 				Default:     nil,
-				Description: "Guest boot disk size. Will expand boot disk to this size.",
+				Description: "Guest boot disk size in GB. Will expand boot disk to this size.",
 			},
 			"memsize": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    false,
 				Computed:    true,
-				Description: "Guest guest memory size.",
+				Description: "Guest guest memory size in MB",
 			},
 			"numvcpus": &schema.Schema{
 				Type:        schema.TypeString,
