@@ -230,6 +230,7 @@ Configuration reference
     * key - Required - Key of the property
     * value - Required - Value of the property
   * ovf_properties_timer - Optional - Length of time to wait for ovf_properties to process.  Default 90s.
+  * nested_esxi - Optional - Set to "y" indicates that the guest can run in a ESXi nested environment
 
 
 * resource "esxi_vswitch"
