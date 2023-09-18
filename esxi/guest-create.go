@@ -19,7 +19,7 @@ import (
 func guestCREATE(c *Config, guest_name string, disk_store string,
 	src_path string, resource_pool_name string, strmemsize string, strnumvcpus string, strvirthwver string, guestos string,
 	boot_disk_type string, boot_disk_size string, virtual_networks [10][3]string, boot_firmware string,
-	virtual_disks [60][2]string, guest_shutdown_timeout int, ovf_properties_timer int, notes string,
+	virtual_disks [60][2]string, guest_shutdown_timeout int, ovf_properties_timer int, notes string, nested_esxi string, 
 	guestinfo map[string]interface{}, ovf_properties map[string]string) (string, error) {
 
 	esxiConnInfo := getConnectionInfo(c)
@@ -164,6 +164,10 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 				fmt.Sprintf("ide1:0.deviceType = \\\"cdrom-raw\\\"\n")
 		}
 
+		if nested_esxi == "y" {
+			vmx_contents = vmx_contents + 
+				fmt.Sprintf("monitor.allowLegacyCPU = \\\"TRUE\\\"\n") 
+		}
 		//
 		//  Write vmx file to esxi host
 		//
@@ -251,9 +255,15 @@ func guestCREATE(c *Config, guest_name string, disk_store string,
 			}
 			log.Println("[guestCREATE] ovf_properties extra_params: " + extra_params)
 		}
-
-		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false %s "+
-			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'", extra_params, boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
+		if ( (nested_esxi == "y") && (is_ovf_properties == false) ) {
+			extra_params = "--allowExtraConfig"
+		}
+		allow_nested_esxi := "" 
+		if nested_esxi == "y" {
+			allow_nested_esxi = "--extraConfig:monitor.allowLegacyCPU=TRUE "
+		} 
+		ovf_cmd := fmt.Sprintf("ovftool --acceptAllEulas --noSSLVerify --X:useMacNaming=false %s %s "+
+			"-dm=%s --name='%s' --overwrite -ds='%s' %s '%s' '%s'", extra_params, allow_nested_esxi,boot_disk_type, guest_name, disk_store, net_param, src_path, dst_path)
 
 		if runtime.GOOS == "windows" {
 			osShellCmd = "cmd.exe"
