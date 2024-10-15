@@ -1,4 +1,4 @@
-module github.com/josenk/terraform-provider-esxi
+module github.com/narenas/terraform-provider-esxi
 
 require (
 	github.com/hashicorp/terraform v0.12.17

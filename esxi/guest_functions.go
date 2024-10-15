@@ -118,6 +118,7 @@ func updateVmx_contents(c *Config, vmid string, iscreate bool, memsize int, numv
 	if strings.Contains(vmx_contents, "Unable to find a VM corresponding") {
 		return nil
 	}
+	log.Printf("[updateVmx_contents] Current contents: %s\n", vmx_contents)
 
 	// modify memsize
 	if memsize != 0 {

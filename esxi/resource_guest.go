@@ -220,6 +220,13 @@ func resourceGUEST() *schema.Resource {
 				Computed:    true,
 				Description: "Guest notes (annotation).",
 			},
+			"nested_esxi": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    false,
+				Computed:    true,
+				Description: "Guest runs in nested ESXI",
+			},
 			"guestinfo": &schema.Schema{
 				Type:        schema.TypeMap,
 				Optional:    true,
@@ -258,6 +265,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 	boot_firmware := d.Get("boot_firmware").(string)
 	notes := d.Get("notes").(string)
 	power := d.Get("power").(string)
+	nested_esxi := d.Get("nested_esxi").(string)
 
 	if d.Get("guest_startup_timeout").(int) > 0 {
 		d.Set("guest_startup_timeout", d.Get("guest_startup_timeout").(int))
@@ -402,7 +410,7 @@ func resourceGUESTCreate(d *schema.ResourceData, m interface{}) error {
 
 	vmid, err := guestCREATE(c, guest_name, disk_store, src_path, resource_pool_name, memsize,
 		numvcpus, virthwver, guestos, boot_disk_type, boot_disk_size, virtual_networks, boot_firmware,
-		virtual_disks, guest_shutdown_timeout, ovf_properties_timer, notes, guestinfo, ovf_properties)
+		virtual_disks, guest_shutdown_timeout, ovf_properties_timer, notes, nested_esxi, guestinfo, ovf_properties)
 	if err != nil {
 		tmpint, _ = strconv.Atoi(vmid)
 		if tmpint > 0 {
